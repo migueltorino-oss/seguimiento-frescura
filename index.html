@@ -1,1 +1,386 @@
-<h1>test minimo</h1>
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Seguimiento de Frescura</title>
+<style>
+:root {
+  --bg: #F6F4EF;
+  --bg-card: #FFFFFF;
+  --ink: #20241F;
+  --ink-soft: #5B5F55;
+  --line: #DDD8CB;
+  --accent: #0F6E63;
+  --accent-soft: #E3EFE9;
+  --ok: #3E8A5B;
+  --ok-bg: #E4F1E7;
+  --warn: #A8721F;
+  --warn-bg: #F6ECD9;
+  --crit: #B0402F;
+  --crit-bg: #F7E4E0;
+  --neutral: #8A8F82;
+  --shadow: 0 1px 2px rgba(32,36,31,0.06), 0 4px 16px rgba(32,36,31,0.05);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #14170E;
+    --bg-card: #1C2016;
+    --ink: #E8E6DC;
+    --ink-soft: #9CA192;
+    --line: #33392A;
+    --accent: #55B39F;
+    --accent-soft: #223A32;
+    --ok: #6FBF87;
+    --ok-bg: #1F3427;
+    --warn: #D9A94D;
+    --warn-bg: #3B3016;
+    --crit: #E28271;
+    --crit-bg: #3C2420;
+    --neutral: #6C7164;
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.35);
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #14170E; --bg-card: #1C2016; --ink: #E8E6DC; --ink-soft: #9CA192; --line: #33392A;
+  --accent: #55B39F; --accent-soft: #223A32; --ok: #6FBF87; --ok-bg: #1F3427;
+  --warn: #D9A94D; --warn-bg: #3B3016; --crit: #E28271; --crit-bg: #3C2420; --neutral: #6C7164;
+  --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.35);
+}
+:root[data-theme="light"] {
+  --bg: #F6F4EF; --bg-card: #FFFFFF; --ink: #20241F; --ink-soft: #5B5F55; --line: #DDD8CB;
+  --accent: #0F6E63; --accent-soft: #E3EFE9; --ok: #3E8A5B; --ok-bg: #E4F1E7;
+  --warn: #A8721F; --warn-bg: #F6ECD9; --crit: #B0402F; --crit-bg: #F7E4E0; --neutral: #8A8F82;
+  --shadow: 0 1px 2px rgba(32,36,31,0.06), 0 4px 16px rgba(32,36,31,0.05);
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font-family: -apple-system, "Segoe UI", system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+  padding: 2rem 1.25rem 4rem;
+}
+.wrap { max-width: 1100px; margin: 0 auto; display: flex; flex-direction: column; gap: 2rem; }
+
+header.page { display: flex; flex-direction: column; gap: 0.35rem; }
+header.page h1 {
+  font-size: clamp(1.5rem, 3vw, 2.1rem); margin: 0; font-weight: 800; letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+header.page .sub { color: var(--ink-soft); font-size: 0.95rem; }
+header.page .meta { color: var(--ink-soft); font-size: 0.8rem; }
+
+.note {
+  background: var(--accent-soft); border: 1px solid var(--line); border-left: 3px solid var(--accent);
+  border-radius: 8px; padding: 0.7rem 1rem; font-size: 0.85rem; color: var(--ink-soft);
+}
+
+.teams-head { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; flex-wrap: wrap; }
+.teams-head .hint { font-size: 0.78rem; color: var(--ink-soft); }
+.teams { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 1rem; margin-top: 0.75rem; }
+.team-card {
+  background: var(--bg-card); border: 1px solid var(--line); border-radius: 12px;
+  padding: 1.1rem 1.2rem; box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 0.55rem;
+  cursor: pointer; transition: border-color .15s, box-shadow .15s, transform .1s;
+}
+.team-card:hover { border-color: var(--accent); }
+.team-card:active { transform: scale(0.99); }
+.team-card:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.team-card.selected { border-color: var(--accent); box-shadow: var(--shadow), 0 0 0 2px var(--accent-soft); }
+.team-card.total { cursor: pointer; }
+.team-card.dimmed { opacity: 0.45; }
+.team-head { display: flex; justify-content: space-between; align-items: baseline; }
+.team-name { font-weight: 700; font-size: 0.95rem; }
+.team-n { font-size: 0.75rem; color: var(--ink-soft); }
+.team-pct { font-size: 2rem; font-weight: 800; letter-spacing: -0.02em; }
+.team-pct.ok { color: var(--ok); } .team-pct.warn { color: var(--warn); } .team-pct.crit { color: var(--crit); }
+.team-nums { display: flex; justify-content: space-between; margin-top: 0.2rem; }
+.team-nums > div { display: flex; flex-direction: column; }
+.team-nums .num { font-weight: 700; font-size: 1rem; }
+.team-nums .lbl { font-size: 0.68rem; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.04em; }
+
+.bar { height: 8px; border-radius: 99px; background: var(--line); overflow: hidden; }
+.bar-sm { height: 6px; width: 88px; display: inline-block; vertical-align: middle; margin-right: 0.5rem; }
+.bar-fill { height: 100%; border-radius: 99px; }
+.bar-fill.ok { background: var(--ok); } .bar-fill.warn { background: var(--warn); }
+.bar-fill.crit { background: var(--crit); } .bar-fill.neutral { background: var(--neutral); }
+
+section.card {
+  background: var(--bg-card); border: 1px solid var(--line); border-radius: 12px;
+  box-shadow: var(--shadow); overflow: hidden;
+}
+section.card > .card-head {
+  padding: 1rem 1.25rem 0.6rem; display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; flex-wrap: wrap;
+}
+section.card h2 { margin: 0; font-size: 1.05rem; font-weight: 700; }
+section.card .card-head .hint { font-size: 0.78rem; color: var(--ink-soft); }
+section.card .card-foot { padding: 0.6rem 1.25rem 1rem; }
+
+.table-scroll { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+thead th {
+  text-align: left; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.05em;
+  color: var(--ink-soft); font-weight: 600; padding: 0.5rem 1rem; border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+tbody td { padding: 0.55rem 1rem; border-bottom: 1px solid var(--line); white-space: nowrap; }
+tbody tr:last-child td { border-bottom: none; }
+tbody tr:hover { background: var(--accent-soft); }
+tbody.empty-msg td { color: var(--ink-soft); font-style: italic; white-space: normal; }
+td.rank { color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+td.name { white-space: normal; min-width: 180px; font-weight: 500; }
+td.mono { font-family: ui-monospace, "Cascadia Code", monospace; font-size: 0.78rem; color: var(--ink-soft); }
+td.num-cell { text-align: right; font-variant-numeric: tabular-nums; }
+td.pct-cell { text-align: right; }
+td.muted { color: var(--ink-soft); }
+.pct-txt { font-weight: 700; font-size: 0.8rem; }
+.pct-txt.ok { color: var(--ok); } .pct-txt.warn { color: var(--warn); } .pct-txt.crit { color: var(--crit); }
+
+tr.art-row { cursor: pointer; }
+td.chev { width: 1.4rem; color: var(--ink-soft); transition: transform .15s; }
+tr.art-row.open td.chev { transform: rotate(90deg); }
+tr.art-detail td { padding: 0; background: var(--accent-soft); }
+tr.art-detail:hover { background: none; }
+.detail-wrap { padding: 0.6rem 1rem 0.9rem 2.6rem; }
+table.mini-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+table.mini-table thead th {
+  padding: 0.3rem 0.75rem; font-size: 0.62rem; border-bottom: 1px solid var(--line);
+}
+table.mini-table tbody td { padding: 0.35rem 0.75rem; border-bottom: 1px solid var(--line); }
+table.mini-table tbody tr:last-child td { border-bottom: none; }
+table.mini-table tbody tr:hover { background: var(--bg-card); }
+
+.chip {
+  display: inline-block; padding: 0.15rem 0.55rem; border-radius: 99px; font-size: 0.72rem; font-weight: 700;
+}
+.chip-juan { background: var(--accent-soft); color: var(--accent); }
+.chip-flor { background: #EFE3F3; color: #7A4B8C; }
+.chip-lucia { background: #E3ECF7; color: #3C5F8C; }
+@media (prefers-color-scheme: dark) {
+  .chip-flor { background: #34243A; color: #CBA6DA; }
+  .chip-lucia { background: #1E2C3D; color: #9CBBE0; }
+}
+:root[data-theme="dark"] .chip-flor { background: #34243A; color: #CBA6DA; }
+:root[data-theme="dark"] .chip-lucia { background: #1E2C3D; color: #9CBBE0; }
+.chip-origen { background: var(--line); color: var(--ink-soft); }
+.chip-ok { background: var(--ok-bg); color: var(--ok); }
+.chip-warn { background: var(--warn-bg); color: var(--warn); }
+.chip-crit { background: var(--crit-bg); color: var(--crit); }
+.chip-clear {
+  background: none; border: 1px solid var(--line); color: var(--ink-soft); cursor: pointer;
+  font: inherit; font-size: 0.72rem; font-weight: 700; padding: 0.15rem 0.6rem; border-radius: 99px;
+}
+.chip-clear:hover { border-color: var(--accent); color: var(--accent); }
+
+footer.page { color: var(--ink-soft); font-size: 0.78rem; line-height: 1.5; border-top: 1px solid var(--line); padding-top: 1rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="page">
+    <h1>Seguimiento de Frescura</h1>
+    <div class="sub">Productos de fecha corta · semana del 03/ago al 09/ago</div>
+    <div class="meta">Actualizado 6/8, 12:02 p. m. hs · ventas por fecha de carga</div>
+  </header>
+
+  <div class="note">Hoy es lunes, arranca la semana: los porcentajes de cumplimiento todavía son bajos y van a subir a medida que se cargue venta durante los próximos días.</div>
+
+  <div>
+    <div class="teams-head">
+      <span class="hint">Click en un equipo para filtrar las tablas de abajo por ese supervisor.</span>
+      <button class="chip-clear" id="btnClear" style="display:none">✕ Quitar filtro</button>
+    </div>
+    <div class="teams">
+      
+  <div class="team-card juan" data-team="JUAN" tabindex="0" role="button" aria-pressed="false">
+    <div class="team-head">
+      <span class="team-name">Equipo JUAN</span>
+      <span class="team-n">12 vendedoras</span>
+    </div>
+    <div class="team-pct warn">55,7%</div>
+    <div class="bar"><div class="bar-fill warn" style="width:55.69956796277833%"></div></div>
+    <div class="team-nums">
+      <div><span class="num">1.676</span><span class="lbl">vendidas</span></div>
+      <div><span class="num">3.009</span><span class="lbl">cuota</span></div>
+      <div><span class="num">1.333</span><span class="lbl">faltan</span></div>
+    </div>
+  </div>
+
+  <div class="team-card flor" data-team="FLOR" tabindex="0" role="button" aria-pressed="false">
+    <div class="team-head">
+      <span class="team-name">Equipo FLOR</span>
+      <span class="team-n">9 vendedoras</span>
+    </div>
+    <div class="team-pct warn">44,2%</div>
+    <div class="bar"><div class="bar-fill warn" style="width:44.15452389020671%"></div></div>
+    <div class="team-nums">
+      <div><span class="num">1.303</span><span class="lbl">vendidas</span></div>
+      <div><span class="num">2.951</span><span class="lbl">cuota</span></div>
+      <div><span class="num">1.648</span><span class="lbl">faltan</span></div>
+    </div>
+  </div>
+
+  <div class="team-card lucia" data-team="LUCIA" tabindex="0" role="button" aria-pressed="false">
+    <div class="team-head">
+      <span class="team-name">Equipo LUCÍA (KAF)</span>
+      <span class="team-n">5 vendedoras</span>
+    </div>
+    <div class="team-pct warn">47,5%</div>
+    <div class="bar"><div class="bar-fill warn" style="width:47.540983606557376%"></div></div>
+    <div class="team-nums">
+      <div><span class="num">116</span><span class="lbl">vendidas</span></div>
+      <div><span class="num">244</span><span class="lbl">cuota</span></div>
+      <div><span class="num">128</span><span class="lbl">faltan</span></div>
+    </div>
+  </div>
+      <div class="team-card total" data-team="" tabindex="0" role="button" aria-pressed="false">
+        <div class="team-head"><span class="team-name">Total</span><span class="team-n">26 vendedoras</span></div>
+        <div class="team-pct warn">49,9%</div>
+        <div class="bar"><div class="bar-fill warn" style="width:49.88716956802063%"></div></div>
+        <div class="team-nums">
+          <div><span class="num">3.095</span><span class="lbl">vendidas</span></div>
+          <div><span class="num">6.204</span><span class="lbl">cuota</span></div>
+          <div><span class="num">3.109</span><span class="lbl">faltan</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <section class="card">
+    <div class="card-head">
+      <h2>Por artículo</h2>
+      <span class="hint" id="hintArt">ordenado por urgencia de vencimiento</span>
+    </div>
+    <div class="table-scroll">
+      <table>
+        <thead><tr>
+          <th></th><th>Código</th><th>Artículo</th><th>Origen</th><th>Vence</th><th>Días</th><th>Cuota</th><th>Vendido</th><th>% vendido</th>
+        </tr></thead>
+        <tbody id="tbodyArt"></tbody>
+      </table>
+    </div>
+    <div class="card-foot hint">Click en una fila para ver el objetivo y lo vendido por cada vendedor.</div>
+  </section>
+
+  <footer class="page">
+    <div><strong>Fuente de cuotas:</strong> Objetivo por vendedor frescura pepsico.xlsx + frescura om 31.7.xlsx (Desktop del usuario, 2026-08-03).</div>
+    <div><strong>Nota equipos:</strong> LUCIA (KAF): el codigo 29 existe pero no tiene actividad real (1 comprobante/$8.170 en julio) -> excluido del cascadeo. Si el usuario confirma que si trabaja, sumarlo y recalcular /6.</div>
+    <div><strong>Cómo se cascadea:</strong> cada artículo tiene una cuota total asignada por equipo (JUAN/FLOR/LUCÍA); esa cuota se divide en partes iguales entre las vendedoras activas del equipo, redondeando artículo por artículo (mismo criterio que la columna "asignación unidades por vendedores" del Excel del usuario). Ese objetivo por vendedora, artículo por artículo, se ve al abrir cada fila de la tabla "Por artículo".</div>
+    <div><strong>Vendido:</strong> unidades de esos artículos cargadas en la semana (fecha de carga), cualquier vendedora que las haya vendido — no solo las de su equipo asignado.</div>
+  </footer>
+
+</div>
+
+<script id="frescura-data" type="application/json">{"articulos":[{"codigo":"300064854","descripcion":"Mani pelado tubular 100x40grs","origen":"Pepsico","fechaVencimiento":"2026-08-11","diasAlVencimiento":5,"cajasFechaCorta":8,"unidadesAVencer":null,"cuotaJUAN":400,"cuotaFLOR":400,"cuotaLUCIA":0,"cuotaTotal":800,"vendidoCodigo":284,"vendidoJUAN":239,"vendidoFLOR":45,"vendidoLUCIA":0,"porVendedor":[{"codigo":"11","nombre":"LORENA ESCOBAR","equipo":"JUAN","cuota":33,"vendido":52,"pct":1.5757575757575757,"falta":0},{"codigo":"4","nombre":"SAMANTA MACHADO","equipo":"JUAN","cuota":33,"vendido":39,"pct":1.1818181818181819,"falta":0},{"codigo":"2","nombre":"MAGALI BADER","equipo":"JUAN","cuota":33,"vendido":31,"pct":0.9393939393939394,"falta":2},{"codigo":"3","nombre":"SOFIA AQUINO","equipo":"JUAN","cuota":33,"vendido":22,"pct":0.6666666666666666,"falta":11},{"codigo":"9","nombre":"PILAR FERNANDEZ","equipo":"JUAN","cuota":33,"vendido":21,"pct":0.6363636363636364,"falta":12},{"codigo":"5","nombre":"VALENTINA GOMEZ","equipo":"JUAN","cuota":33,"vendido":19,"pct":0.5757575757575758,"falta":14},{"codigo":"10","nombre":"IVANA CASTILLO","equipo":"JUAN","cuota":33,"vendido":18,"pct":0.5454545454545454,"falta":15},{"codigo":"8","nombre":"AILEN BLANCO","equipo":"JUAN","cuota":33,"vendido":17,"pct":0.5151515151515151,"falta":16},{"codigo":"12","nombre":"FIAMA JARA","equipo":"JUAN","cuota":33,"vendido":9,"pct":0.2727272727272727,"falta":24},{"codigo":"38","nombre":"NAHUEL BAETA","equipo":"FLOR","cuota":44,"vendido":11,"pct":0.25,"falta":33},{"codigo":"45","nombre":"NATALIA POLITO","equipo":"FLOR","cuota":44,"vendido":10,"pct":0.22727272727272727,"falta":34},{"codigo":"33","nombre":"SOFIA CATIVIELA","equipo":"FLOR","cuota":44,"vendido":9,"pct":0.20454545454545456,"falta":35},{"codigo":"7","nombre":"ANGELA ECHEVERRIA","equipo":"JUAN","cuota":33,"vendido":6,"pct":0.18181818181818182,"falta":27},{"codigo":"1","nombre":"ROCIO MORE","equipo":"JUAN","cuota":33,"vendido":5,"pct":0.15151515151515152,"falta":28},{"codigo":"31","nombre":"MARIA VICTORIA ZERDA","equipo":"FLOR","cuota":44,"vendido":6,"pct":0.13636363636363635,"falta":38},{"codigo":"32","nombre":"CAROLINA ECHEVERRIA","equipo":"FLOR","cuota":44,"vendido":3,"pct":0.06818181818181818,"falta":41},{"codigo":"37","nombre":"GIMENA ESCUDERO","equipo":"FLOR","cuota":44,"vendido":3,"pct":0.06818181818181818,"falta":41},{"codigo":"44","nombre":"BELEN ROMERO","equipo":"FLOR","cuota":44,"vendido":3,"pct":0.06818181818181818,"falta":41},{"codigo":"6","nombre":"SILVIA BOUTET","equipo":"JUAN","cuota":33,"vendido":0,"pct":0,"falta":33},{"codigo":"34","nombre":"NARA GONZALEZ","equipo":"FLOR","cuota":44,"vendido":0,"pct":0,"falta":44},{"codigo":"35","nombre":"AGUSTINA COCA","equipo":"FLOR","cuota":44,"vendido":0,"pct":0,"falta":44}]},{"codigo":"300060869","descripcion":"Maniax Sal Y Limon 95gx60x1","origen":"Pepsico","fechaVencimiento":"2026-08-12","diasAlVencimiento":6,"cajasFechaCorta":2,"unidadesAVencer":null,"cuotaJUAN":60,"cuotaFLOR":60,"cuotaLUCIA":0,"cuotaTotal":120,"vendidoCodigo":179,"vendidoJUAN":87,"vendidoFLOR":92,"vendidoLUCIA":0,"porVendedor":[{"codigo":"32","nombre":"CAROLINA ECHEVERRIA","equipo":"FLOR","cuota":7,"vendido":24,"pct":3.4285714285714284,"falta":0},{"codigo":"7","nombre":"ANGELA ECHEVERRIA","equipo":"JUAN","cuota":5,"vendido":15,"pct":3,"falta":0},{"codigo":"31","nombre":"MARIA VICTORIA ZERDA","equipo":"FLOR","cuota":7,"vendido":20,"pct":2.857142857142857,"falta":0},{"codigo":"3","nombre":"SOFIA AQUINO","equipo":"JUAN","cuota":5,"vendido":14,"pct":2.8,"falta":0},{"codigo":"38","nombre":"NAHUEL BAETA","equipo":"FLOR","cuota":7,"vendido":19,"pct":2.7142857142857144,"falta":0},{"codigo":"2","nombre":"MAGALI BADER","equipo":"JUAN","cuota":5,"vendido":12,"pct":2.4,"falta":0},{"codigo":"8","nombre":"AILEN BLANCO","equipo":"JUAN","cuota":5,"vendido":12,"pct":2.4,"falta":0},{"codigo":"10","nombre":"IVANA CASTILLO","equipo":"JUAN","cuota":5,"vendido":9,"pct":1.8,"falta":0},{"codigo":"11","nombre":"LORENA ESCOBAR","equipo":"JUAN","cuota":5,"vendido":9,"pct":1.8,"falta":0},{"codigo":"45","nombre":"NATALIA POLITO","equipo":"FLOR","cuota":7,"vendido":12,"pct":1.7142857142857142,"falta":0},{"codigo":"4","nombre":"SAMANTA MACHADO","equipo":"JUAN","cuota":5,"vendido":8,"pct":1.6,"falta":0},{"codigo":"9","nombre":"PILAR FERNANDEZ","equipo":"JUAN","cuota":5,"vendido":5,"pct":1,"falta":0},{"codigo":"35","nombre":"AGUSTINA COCA","equipo":"FLOR","cuota":7,"vendido":7,"pct":1,"falta":0},{"codigo":"37","nombre":"GIMENA ESCUDERO","equipo":"FLOR","cuota":7,"vendido":5,"pct":0.7142857142857143,"falta":2},{"codigo":"5","nombre":"VALENTINA GOMEZ","equipo":"JUAN","cuota":5,"vendido":3,"pct":0.6,"falta":2},{"codigo":"34","nombre":"NARA GONZALEZ","equipo":"FLOR","cuota":7,"vendido":4,"pct":0.5714285714285714,"falta":3},{"codigo":"33","nombre":"SOFIA CATIVIELA","equipo":"FLOR","cuota":7,"vendido":1,"pct":0.14285714285714285,"falta":6},{"codigo":"1","nombre":"ROCIO MORE","equipo":"JUAN","cuota":5,"vendido":0,"pct":0,"falta":5},{"codigo":"6","nombre":"SILVIA BOUTET","equipo":"JUAN","cuota":5,"vendido":0,"pct":0,"falta":5},{"codigo":"12","nombre":"FIAMA JARA","equipo":"JUAN","cuota":5,"vendido":0,"pct":0,"falta":5},{"codigo":"44","nombre":"BELEN ROMERO","equipo":"FLOR","cuota":7,"vendido":0,"pct":0,"falta":7}]},{"codigo":"300033488","descripcion":"Pep Comun 40gx60 Pi","origen":"Pepsico","fechaVencimiento":"2026-08-16","diasAlVencimiento":10,"cajasFechaCorta":13,"unidadesAVencer":null,"cuotaJUAN":360,"cuotaFLOR":420,"cuotaLUCIA":0,"cuotaTotal":780,"vendidoCodigo":538,"vendidoJUAN":311,"vendidoFLOR":227,"vendidoLUCIA":0,"porVendedor":[{"codigo":"11","nombre":"LORENA ESCOBAR","equipo":"JUAN","cuota":30,"vendido":54,"pct":1.8,"falta":0},{"codigo":"8","nombre":"AILEN BLANCO","equipo":"JUAN","cuota":30,"vendido":51,"pct":1.7,"falta":0},{"codigo":"9","nombre":"PILAR FERNANDEZ","equipo":"JUAN","cuota":30,"vendido":34,"pct":1.1333333333333333,"falta":0},{"codigo":"10","nombre":"IVANA CASTILLO","equipo":"JUAN","cuota":30,"vendido":34,"pct":1.1333333333333333,"falta":0},{"codigo":"4","nombre":"SAMANTA MACHADO","equipo":"JUAN","cuota":30,"vendido":33,"pct":1.1,"falta":0},{"codigo":"37","nombre":"GIMENA ESCUDERO","equipo":"FLOR","cuota":47,"vendido":46,"pct":0.9787234042553191,"falta":1},{"codigo":"33","nombre":"SOFIA CATIVIELA","equipo":"FLOR","cuota":47,"vendido":45,"pct":0.9574468085106383,"falta":2},{"codigo":"45","nombre":"NATALIA POLITO","equipo":"FLOR","cuota":47,"vendido":40,"pct":0.851063829787234,"falta":7},{"codigo":"2","nombre":"MAGALI BADER","equipo":"JUAN","cuota":30,"vendido":22,"pct":0.7333333333333333,"falta":8},{"codigo":"38","nombre":"NAHUEL BAETA","equipo":"FLOR","cuota":47,"vendido":33,"pct":0.7021276595744681,"falta":14},{"codigo":"7","nombre":"ANGELA ECHEVERRIA","equipo":"JUAN","cuota":30,"vendido":18,"pct":0.6,"falta":12},{"codigo":"3","nombre":"SOFIA AQUINO","equipo":"JUAN","cuota":30,"vendido":17,"pct":0.5666666666666667,"falta":13},{"codigo":"12","nombre":"FIAMA JARA","equipo":"JUAN","cuota":30,"vendido":17,"pct":0.5666666666666667,"falta":13},{"codigo":"32","nombre":"CAROLINA ECHEVERRIA","equipo":"FLOR","cuota":47,"vendido":23,"pct":0.48936170212765956,"falta":24},{"codigo":"5","nombre":"VALENTINA GOMEZ","equipo":"JUAN","cuota":30,"vendido":14,"pct":0.4666666666666667,"falta":16},{"codigo":"1","nombre":"ROCIO MORE","equipo":"JUAN","cuota":30,"vendido":11,"pct":0.36666666666666664,"falta":19},{"codigo":"44","nombre":"BELEN ROMERO","equipo":"FLOR","cuota":47,"vendido":12,"pct":0.2553191489361702,"falta":35},{"codigo":"35","nombre":"AGUSTINA COCA","equipo":"FLOR","cuota":47,"vendido":11,"pct":0.23404255319148937,"falta":36},{"codigo":"6","nombre":"SILVIA BOUTET","equipo":"JUAN","cuota":30,"vendido":6,"pct":0.2,"falta":24},{"codigo":"34","nombre":"NARA GONZALEZ","equipo":"FLOR","cuota":47,"vendido":9,"pct":0.19148936170212766,"falta":38},{"codigo":"31","nombre":"MARIA VICTORIA ZERDA","equipo":"FLOR","cuota":47,"vendido":8,"pct":0.1702127659574468,"falta":39}]},{"codigo":"300066262","descripcion":"DORITOS PIZZA 35GRX88","origen":"Pepsico","fechaVencimiento":"2026-08-09","diasAlVencimiento":3,"cajasFechaCorta":3,"unidadesAVencer":null,"cuotaJUAN":176,"cuotaFLOR":88,"cuotaLUCIA":0,"cuotaTotal":264,"vendidoCodigo":350,"vendidoJUAN":132,"vendidoFLOR":218,"vendidoLUCIA":0,"porVendedor":[{"codigo":"35","nombre":"AGUSTINA COCA","equipo":"FLOR","cuota":10,"vendido":60,"pct":6,"falta":0},{"codigo":"32","nombre":"CAROLINA ECHEVERRIA","equipo":"FLOR","cuota":10,"vendido":35,"pct":3.5,"falta":0},{"codigo":"44","nombre":"BELEN ROMERO","equipo":"FLOR","cuota":10,"vendido":31,"pct":3.1,"falta":0},{"codigo":"45","nombre":"NATALIA POLITO","equipo":"FLOR","cuota":10,"vendido":24,"pct":2.4,"falta":0},{"codigo":"11","nombre":"LORENA ESCOBAR","equipo":"JUAN","cuota":15,"vendido":30,"pct":2,"falta":0},{"codigo":"37","nombre":"GIMENA ESCUDERO","equipo":"FLOR","cuota":10,"vendido":18,"pct":1.8,"falta":0},{"codigo":"34","nombre":"NARA GONZALEZ","equipo":"FLOR","cuota":10,"vendido":16,"pct":1.6,"falta":0},{"codigo":"38","nombre":"NAHUEL BAETA","equipo":"FLOR","cuota":10,"vendido":16,"pct":1.6,"falta":0},{"codigo":"1","nombre":"ROCIO MORE","equipo":"JUAN","cuota":15,"vendido":21,"pct":1.4,"falta":0},{"codigo":"31","nombre":"MARIA VICTORIA ZERDA","equipo":"FLOR","cuota":10,"vendido":11,"pct":1.1,"falta":0},{"codigo":"4","nombre":"SAMANTA MACHADO","equipo":"JUAN","cuota":15,"vendido":15,"pct":1,"falta":0},{"codigo":"7","nombre":"ANGELA ECHEVERRIA","equipo":"JUAN","cuota":15,"vendido":12,"pct":0.8,"falta":3},{"codigo":"6","nombre":"SILVIA BOUTET","equipo":"JUAN","cuota":15,"vendido":11,"pct":0.7333333333333333,"falta":4},{"codigo":"9","nombre":"PILAR FERNANDEZ","equipo":"JUAN","cuota":15,"vendido":11,"pct":0.7333333333333333,"falta":4},{"codigo":"33","nombre":"SOFIA CATIVIELA","equipo":"FLOR","cuota":10,"vendido":7,"pct":0.7,"falta":3},{"codigo":"8","nombre":"AILEN BLANCO","equipo":"JUAN","cuota":15,"vendido":8,"pct":0.5333333333333333,"falta":7},{"codigo":"12","nombre":"FIAMA JARA","equipo":"JUAN","cuota":15,"vendido":8,"pct":0.5333333333333333,"falta":7},{"codigo":"3","nombre":"SOFIA AQUINO","equipo":"JUAN","cuota":15,"vendido":6,"pct":0.4,"falta":9},{"codigo":"5","nombre":"VALENTINA GOMEZ","equipo":"JUAN","cuota":15,"vendido":5,"pct":0.3333333333333333,"falta":10},{"codigo":"10","nombre":"IVANA CASTILLO","equipo":"JUAN","cuota":15,"vendido":5,"pct":0.3333333333333333,"falta":10},{"codigo":"2","nombre":"MAGALI BADER","equipo":"JUAN","cuota":15,"vendido":0,"pct":0,"falta":15}]},{"codigo":"300066261","descripcion":"DORITOS PIZZA 74GRX29","origen":"Pepsico","fechaVencimiento":"2026-08-16","diasAlVencimiento":10,"cajasFechaCorta":9,"unidadesAVencer":null,"cuotaJUAN":145,"cuotaFLOR":116,"cuotaLUCIA":0,"cuotaTotal":261,"vendidoCodigo":1017,"vendidoJUAN":568,"vendidoFLOR":447,"vendidoLUCIA":0,"porVendedor":[{"codigo":"7","nombre":"ANGELA ECHEVERRIA","equipo":"JUAN","cuota":12,"vendido":79,"pct":6.583333333333333,"falta":0},{"codigo":"34","nombre":"NARA GONZALEZ","equipo":"FLOR","cuota":13,"vendido":75,"pct":5.769230769230769,"falta":0},{"codigo":"44","nombre":"BELEN ROMERO","equipo":"FLOR","cuota":13,"vendido":73,"pct":5.615384615384615,"falta":0},{"codigo":"35","nombre":"AGUSTINA COCA","equipo":"FLOR","cuota":13,"vendido":72,"pct":5.538461538461538,"falta":0},{"codigo":"5","nombre":"VALENTINA GOMEZ","equipo":"JUAN","cuota":12,"vendido":65,"pct":5.416666666666667,"falta":0},{"codigo":"9","nombre":"PILAR FERNANDEZ","equipo":"JUAN","cuota":12,"vendido":65,"pct":5.416666666666667,"falta":0},{"codigo":"6","nombre":"SILVIA BOUTET","equipo":"JUAN","cuota":12,"vendido":56,"pct":4.666666666666667,"falta":0},{"codigo":"33","nombre":"SOFIA CATIVIELA","equipo":"FLOR","cuota":13,"vendido":55,"pct":4.230769230769231,"falta":0},{"codigo":"10","nombre":"IVANA CASTILLO","equipo":"JUAN","cuota":12,"vendido":50,"pct":4.166666666666667,"falta":0},{"codigo":"1","nombre":"ROCIO MORE","equipo":"JUAN","cuota":12,"vendido":48,"pct":4,"falta":0},{"codigo":"4","nombre":"SAMANTA MACHADO","equipo":"JUAN","cuota":12,"vendido":45,"pct":3.75,"falta":0},{"codigo":"11","nombre":"LORENA ESCOBAR","equipo":"JUAN","cuota":12,"vendido":43,"pct":3.5833333333333335,"falta":0},{"codigo":"45","nombre":"NATALIA POLITO","equipo":"FLOR","cuota":13,"vendido":46,"pct":3.5384615384615383,"falta":0},{"codigo":"3","nombre":"SOFIA AQUINO","equipo":"JUAN","cuota":12,"vendido":37,"pct":3.0833333333333335,"falta":0},{"codigo":"31","nombre":"MARIA VICTORIA ZERDA","equipo":"FLOR","cuota":13,"vendido":36,"pct":2.769230769230769,"falta":0},{"codigo":"8","nombre":"AILEN BLANCO","equipo":"JUAN","cuota":12,"vendido":33,"pct":2.75,"falta":0},{"codigo":"37","nombre":"GIMENA ESCUDERO","equipo":"FLOR","cuota":13,"vendido":35,"pct":2.6923076923076925,"falta":0},{"codigo":"32","nombre":"CAROLINA ECHEVERRIA","equipo":"FLOR","cuota":13,"vendido":31,"pct":2.3846153846153846,"falta":0},{"codigo":"12","nombre":"FIAMA JARA","equipo":"JUAN","cuota":12,"vendido":25,"pct":2.0833333333333335,"falta":0},{"codigo":"38","nombre":"NAHUEL BAETA","equipo":"FLOR","cuota":13,"vendido":24,"pct":1.8461538461538463,"falta":0},{"codigo":"2","nombre":"MAGALI BADER","equipo":"JUAN","cuota":12,"vendido":22,"pct":1.8333333333333333,"falta":0}]},{"codigo":"300066581","descripcion":"LAYS ACAN ASADO 34GX72X1","origen":"Pepsico","fechaVencimiento":"2026-08-16","diasAlVencimiento":10,"cajasFechaCorta":46,"unidadesAVencer":null,"cuotaJUAN":1656,"cuotaFLOR":1656,"cuotaLUCIA":0,"cuotaTotal":3312,"vendidoCodigo":531,"vendidoJUAN":326,"vendidoFLOR":202,"vendidoLUCIA":0,"porVendedor":[{"codigo":"11","nombre":"LORENA ESCOBAR","equipo":"JUAN","cuota":138,"vendido":103,"pct":0.7463768115942029,"falta":35},{"codigo":"37","nombre":"GIMENA ESCUDERO","equipo":"FLOR","cuota":184,"vendido":44,"pct":0.2391304347826087,"falta":140},{"codigo":"9","nombre":"PILAR FERNANDEZ","equipo":"JUAN","cuota":138,"vendido":31,"pct":0.2246376811594203,"falta":107},{"codigo":"2","nombre":"MAGALI BADER","equipo":"JUAN","cuota":138,"vendido":30,"pct":0.21739130434782608,"falta":108},{"codigo":"38","nombre":"NAHUEL BAETA","equipo":"FLOR","cuota":184,"vendido":39,"pct":0.21195652173913043,"falta":145},{"codigo":"10","nombre":"IVANA CASTILLO","equipo":"JUAN","cuota":138,"vendido":27,"pct":0.1956521739130435,"falta":111},{"codigo":"33","nombre":"SOFIA CATIVIELA","equipo":"FLOR","cuota":184,"vendido":33,"pct":0.1793478260869565,"falta":151},{"codigo":"1","nombre":"ROCIO MORE","equipo":"JUAN","cuota":138,"vendido":23,"pct":0.16666666666666666,"falta":115},{"codigo":"4","nombre":"SAMANTA MACHADO","equipo":"JUAN","cuota":138,"vendido":22,"pct":0.15942028985507245,"falta":116},{"codigo":"8","nombre":"AILEN BLANCO","equipo":"JUAN","cuota":138,"vendido":21,"pct":0.15217391304347827,"falta":117},{"codigo":"5","nombre":"VALENTINA GOMEZ","equipo":"JUAN","cuota":138,"vendido":20,"pct":0.14492753623188406,"falta":118},{"codigo":"44","nombre":"BELEN ROMERO","equipo":"FLOR","cuota":184,"vendido":26,"pct":0.14130434782608695,"falta":158},{"codigo":"12","nombre":"FIAMA JARA","equipo":"JUAN","cuota":138,"vendido":19,"pct":0.13768115942028986,"falta":119},{"codigo":"7","nombre":"ANGELA ECHEVERRIA","equipo":"JUAN","cuota":138,"vendido":18,"pct":0.13043478260869565,"falta":120},{"codigo":"32","nombre":"CAROLINA ECHEVERRIA","equipo":"FLOR","cuota":184,"vendido":19,"pct":0.10326086956521739,"falta":165},{"codigo":"35","nombre":"AGUSTINA COCA","equipo":"FLOR","cuota":184,"vendido":18,"pct":0.09782608695652174,"falta":166},{"codigo":"45","nombre":"NATALIA POLITO","equipo":"FLOR","cuota":184,"vendido":17,"pct":0.09239130434782608,"falta":167},{"codigo":"3","nombre":"SOFIA AQUINO","equipo":"JUAN","cuota":138,"vendido":7,"pct":0.050724637681159424,"falta":131},{"codigo":"6","nombre":"SILVIA BOUTET","equipo":"JUAN","cuota":138,"vendido":5,"pct":0.036231884057971016,"falta":133},{"codigo":"34","nombre":"NARA GONZALEZ","equipo":"FLOR","cuota":184,"vendido":4,"pct":0.021739130434782608,"falta":180},{"codigo":"31","nombre":"MARIA VICTORIA ZERDA","equipo":"FLOR","cuota":184,"vendido":2,"pct":0.010869565217391304,"falta":182}]},{"codigo":"2331676","descripcion":"CARAMELO RELL MENTA/CHOCO 450GR (lote venc. 25/8)","origen":"General","fechaVencimiento":"2026-08-25","diasAlVencimiento":19,"cajasFechaCorta":null,"unidadesAVencer":11,"cuotaJUAN":6,"cuotaFLOR":5,"cuotaLUCIA":0,"cuotaTotal":11,"vendidoCodigo":45,"vendidoJUAN":5,"vendidoFLOR":40,"vendidoLUCIA":0,"porVendedor":[{"codigo":"45","nombre":"NATALIA POLITO","equipo":"FLOR","cuota":1,"vendido":35,"pct":35,"falta":0},{"codigo":"10","nombre":"IVANA CASTILLO","equipo":"JUAN","cuota":1,"vendido":2,"pct":2,"falta":0},{"codigo":"31","nombre":"MARIA VICTORIA ZERDA","equipo":"FLOR","cuota":1,"vendido":2,"pct":2,"falta":0},{"codigo":"33","nombre":"SOFIA CATIVIELA","equipo":"FLOR","cuota":1,"vendido":2,"pct":2,"falta":0},{"codigo":"2","nombre":"MAGALI BADER","equipo":"JUAN","cuota":1,"vendido":1,"pct":1,"falta":0},{"codigo":"5","nombre":"VALENTINA GOMEZ","equipo":"JUAN","cuota":1,"vendido":1,"pct":1,"falta":0},{"codigo":"8","nombre":"AILEN BLANCO","equipo":"JUAN","cuota":1,"vendido":1,"pct":1,"falta":0},{"codigo":"32","nombre":"CAROLINA ECHEVERRIA","equipo":"FLOR","cuota":1,"vendido":1,"pct":1,"falta":0},{"codigo":"1","nombre":"ROCIO MORE","equipo":"JUAN","cuota":1,"vendido":0,"pct":0,"falta":1},{"codigo":"3","nombre":"SOFIA AQUINO","equipo":"JUAN","cuota":1,"vendido":0,"pct":0,"falta":1},{"codigo":"4","nombre":"SAMANTA MACHADO","equipo":"JUAN","cuota":1,"vendido":0,"pct":0,"falta":1},{"codigo":"6","nombre":"SILVIA BOUTET","equipo":"JUAN","cuota":1,"vendido":0,"pct":0,"falta":1},{"codigo":"7","nombre":"ANGELA ECHEVERRIA","equipo":"JUAN","cuota":1,"vendido":0,"pct":0,"falta":1},{"codigo":"9","nombre":"PILAR FERNANDEZ","equipo":"JUAN","cuota":1,"vendido":0,"pct":0,"falta":1},{"codigo":"11","nombre":"LORENA ESCOBAR","equipo":"JUAN","cuota":1,"vendido":0,"pct":0,"falta":1},{"codigo":"12","nombre":"FIAMA JARA","equipo":"JUAN","cuota":1,"vendido":0,"pct":0,"falta":1},{"codigo":"34","nombre":"NARA GONZALEZ","equipo":"FLOR","cuota":1,"vendido":0,"pct":0,"falta":1},{"codigo":"35","nombre":"AGUSTINA COCA","equipo":"FLOR","cuota":1,"vendido":0,"pct":0,"falta":1},{"codigo":"37","nombre":"GIMENA ESCUDERO","equipo":"FLOR","cuota":1,"vendido":0,"pct":0,"falta":1},{"codigo":"38","nombre":"NAHUEL BAETA","equipo":"FLOR","cuota":1,"vendido":0,"pct":0,"falta":1},{"codigo":"44","nombre":"BELEN ROMERO","equipo":"FLOR","cuota":1,"vendido":0,"pct":0,"falta":1}]},{"codigo":"2331676","descripcion":"CARAMELO RELL MENTA/CHOCO 450GR (lote venc. 27/8)","origen":"General","fechaVencimiento":"2026-08-27","diasAlVencimiento":21,"cajasFechaCorta":null,"unidadesAVencer":312,"cuotaJUAN":156,"cuotaFLOR":156,"cuotaLUCIA":0,"cuotaTotal":312,"vendidoCodigo":45,"vendidoJUAN":5,"vendidoFLOR":40,"vendidoLUCIA":0,"porVendedor":[{"codigo":"45","nombre":"NATALIA POLITO","equipo":"FLOR","cuota":17,"vendido":35,"pct":2.0588235294117645,"falta":0},{"codigo":"10","nombre":"IVANA CASTILLO","equipo":"JUAN","cuota":13,"vendido":2,"pct":0.15384615384615385,"falta":11},{"codigo":"31","nombre":"MARIA VICTORIA ZERDA","equipo":"FLOR","cuota":17,"vendido":2,"pct":0.11764705882352941,"falta":15},{"codigo":"33","nombre":"SOFIA CATIVIELA","equipo":"FLOR","cuota":17,"vendido":2,"pct":0.11764705882352941,"falta":15},{"codigo":"2","nombre":"MAGALI BADER","equipo":"JUAN","cuota":13,"vendido":1,"pct":0.07692307692307693,"falta":12},{"codigo":"5","nombre":"VALENTINA GOMEZ","equipo":"JUAN","cuota":13,"vendido":1,"pct":0.07692307692307693,"falta":12},{"codigo":"8","nombre":"AILEN BLANCO","equipo":"JUAN","cuota":13,"vendido":1,"pct":0.07692307692307693,"falta":12},{"codigo":"32","nombre":"CAROLINA ECHEVERRIA","equipo":"FLOR","cuota":17,"vendido":1,"pct":0.058823529411764705,"falta":16},{"codigo":"1","nombre":"ROCIO MORE","equipo":"JUAN","cuota":13,"vendido":0,"pct":0,"falta":13},{"codigo":"3","nombre":"SOFIA AQUINO","equipo":"JUAN","cuota":13,"vendido":0,"pct":0,"falta":13},{"codigo":"4","nombre":"SAMANTA MACHADO","equipo":"JUAN","cuota":13,"vendido":0,"pct":0,"falta":13},{"codigo":"6","nombre":"SILVIA BOUTET","equipo":"JUAN","cuota":13,"vendido":0,"pct":0,"falta":13},{"codigo":"7","nombre":"ANGELA ECHEVERRIA","equipo":"JUAN","cuota":13,"vendido":0,"pct":0,"falta":13},{"codigo":"9","nombre":"PILAR FERNANDEZ","equipo":"JUAN","cuota":13,"vendido":0,"pct":0,"falta":13},{"codigo":"11","nombre":"LORENA ESCOBAR","equipo":"JUAN","cuota":13,"vendido":0,"pct":0,"falta":13},{"codigo":"12","nombre":"FIAMA JARA","equipo":"JUAN","cuota":13,"vendido":0,"pct":0,"falta":13},{"codigo":"34","nombre":"NARA GONZALEZ","equipo":"FLOR","cuota":17,"vendido":0,"pct":0,"falta":17},{"codigo":"35","nombre":"AGUSTINA COCA","equipo":"FLOR","cuota":17,"vendido":0,"pct":0,"falta":17},{"codigo":"37","nombre":"GIMENA ESCUDERO","equipo":"FLOR","cuota":17,"vendido":0,"pct":0,"falta":17},{"codigo":"38","nombre":"NAHUEL BAETA","equipo":"FLOR","cuota":17,"vendido":0,"pct":0,"falta":17},{"codigo":"44","nombre":"BELEN ROMERO","equipo":"FLOR","cuota":17,"vendido":0,"pct":0,"falta":17}]},{"codigo":"8570","descripcion":"GAONA SINFONIA LIMON 42 X 50 GRS","origen":"General","fechaVencimiento":"2026-08-27","diasAlVencimiento":21,"cajasFechaCorta":null,"unidadesAVencer":238,"cuotaJUAN":0,"cuotaFLOR":0,"cuotaLUCIA":238,"cuotaTotal":238,"vendidoCodigo":194,"vendidoJUAN":0,"vendidoFLOR":0,"vendidoLUCIA":110,"porVendedor":[{"codigo":"24","nombre":"KAF DANIEL SANCHEZ","equipo":"LUCIA","cuota":48,"vendido":42,"pct":0.875,"falta":6},{"codigo":"26","nombre":"Kaf Gaby Peralta","equipo":"LUCIA","cuota":48,"vendido":42,"pct":0.875,"falta":6},{"codigo":"27","nombre":"Kaf Maria Jose Minio","equipo":"LUCIA","cuota":48,"vendido":26,"pct":0.5416666666666666,"falta":22},{"codigo":"25","nombre":"KAF ROMINA MERELLO","equipo":"LUCIA","cuota":48,"vendido":0,"pct":0,"falta":48},{"codigo":"28","nombre":"VENDEDOR 28 KAF","equipo":"LUCIA","cuota":48,"vendido":0,"pct":0,"falta":48}]},{"codigo":"2333413","descripcion":"TURRON DE MANI CON MIEL","origen":"General","fechaVencimiento":"2026-08-28","diasAlVencimiento":22,"cajasFechaCorta":null,"unidadesAVencer":40,"cuotaJUAN":20,"cuotaFLOR":20,"cuotaLUCIA":0,"cuotaTotal":40,"vendidoCodigo":40,"vendidoJUAN":8,"vendidoFLOR":32,"vendidoLUCIA":0,"porVendedor":[{"codigo":"45","nombre":"NATALIA POLITO","equipo":"FLOR","cuota":2,"vendido":32,"pct":16,"falta":0},{"codigo":"11","nombre":"LORENA ESCOBAR","equipo":"JUAN","cuota":2,"vendido":6,"pct":3,"falta":0},{"codigo":"5","nombre":"VALENTINA GOMEZ","equipo":"JUAN","cuota":2,"vendido":2,"pct":1,"falta":0},{"codigo":"1","nombre":"ROCIO MORE","equipo":"JUAN","cuota":2,"vendido":0,"pct":0,"falta":2},{"codigo":"2","nombre":"MAGALI BADER","equipo":"JUAN","cuota":2,"vendido":0,"pct":0,"falta":2},{"codigo":"3","nombre":"SOFIA AQUINO","equipo":"JUAN","cuota":2,"vendido":0,"pct":0,"falta":2},{"codigo":"4","nombre":"SAMANTA MACHADO","equipo":"JUAN","cuota":2,"vendido":0,"pct":0,"falta":2},{"codigo":"6","nombre":"SILVIA BOUTET","equipo":"JUAN","cuota":2,"vendido":0,"pct":0,"falta":2},{"codigo":"7","nombre":"ANGELA ECHEVERRIA","equipo":"JUAN","cuota":2,"vendido":0,"pct":0,"falta":2},{"codigo":"8","nombre":"AILEN BLANCO","equipo":"JUAN","cuota":2,"vendido":0,"pct":0,"falta":2},{"codigo":"9","nombre":"PILAR FERNANDEZ","equipo":"JUAN","cuota":2,"vendido":0,"pct":0,"falta":2},{"codigo":"10","nombre":"IVANA CASTILLO","equipo":"JUAN","cuota":2,"vendido":0,"pct":0,"falta":2},{"codigo":"12","nombre":"FIAMA JARA","equipo":"JUAN","cuota":2,"vendido":0,"pct":0,"falta":2},{"codigo":"31","nombre":"MARIA VICTORIA ZERDA","equipo":"FLOR","cuota":2,"vendido":0,"pct":0,"falta":2},{"codigo":"32","nombre":"CAROLINA ECHEVERRIA","equipo":"FLOR","cuota":2,"vendido":0,"pct":0,"falta":2},{"codigo":"33","nombre":"SOFIA CATIVIELA","equipo":"FLOR","cuota":2,"vendido":0,"pct":0,"falta":2},{"codigo":"34","nombre":"NARA GONZALEZ","equipo":"FLOR","cuota":2,"vendido":0,"pct":0,"falta":2},{"codigo":"35","nombre":"AGUSTINA COCA","equipo":"FLOR","cuota":2,"vendido":0,"pct":0,"falta":2},{"codigo":"37","nombre":"GIMENA ESCUDERO","equipo":"FLOR","cuota":2,"vendido":0,"pct":0,"falta":2},{"codigo":"38","nombre":"NAHUEL BAETA","equipo":"FLOR","cuota":2,"vendido":0,"pct":0,"falta":2},{"codigo":"44","nombre":"BELEN ROMERO","equipo":"FLOR","cuota":2,"vendido":0,"pct":0,"falta":2}]},{"codigo":"2331676","descripcion":"CARAMELO RELL MENTA/CHOCO 450GR (lote venc. 30/8)","origen":"General","fechaVencimiento":"2026-08-30","diasAlVencimiento":24,"cajasFechaCorta":null,"unidadesAVencer":60,"cuotaJUAN":30,"cuotaFLOR":30,"cuotaLUCIA":0,"cuotaTotal":60,"vendidoCodigo":45,"vendidoJUAN":5,"vendidoFLOR":40,"vendidoLUCIA":0,"porVendedor":[{"codigo":"45","nombre":"NATALIA POLITO","equipo":"FLOR","cuota":3,"vendido":35,"pct":11.666666666666666,"falta":0},{"codigo":"10","nombre":"IVANA CASTILLO","equipo":"JUAN","cuota":3,"vendido":2,"pct":0.6666666666666666,"falta":1},{"codigo":"31","nombre":"MARIA VICTORIA ZERDA","equipo":"FLOR","cuota":3,"vendido":2,"pct":0.6666666666666666,"falta":1},{"codigo":"33","nombre":"SOFIA CATIVIELA","equipo":"FLOR","cuota":3,"vendido":2,"pct":0.6666666666666666,"falta":1},{"codigo":"2","nombre":"MAGALI BADER","equipo":"JUAN","cuota":3,"vendido":1,"pct":0.3333333333333333,"falta":2},{"codigo":"5","nombre":"VALENTINA GOMEZ","equipo":"JUAN","cuota":3,"vendido":1,"pct":0.3333333333333333,"falta":2},{"codigo":"8","nombre":"AILEN BLANCO","equipo":"JUAN","cuota":3,"vendido":1,"pct":0.3333333333333333,"falta":2},{"codigo":"32","nombre":"CAROLINA ECHEVERRIA","equipo":"FLOR","cuota":3,"vendido":1,"pct":0.3333333333333333,"falta":2},{"codigo":"1","nombre":"ROCIO MORE","equipo":"JUAN","cuota":3,"vendido":0,"pct":0,"falta":3},{"codigo":"3","nombre":"SOFIA AQUINO","equipo":"JUAN","cuota":3,"vendido":0,"pct":0,"falta":3},{"codigo":"4","nombre":"SAMANTA MACHADO","equipo":"JUAN","cuota":3,"vendido":0,"pct":0,"falta":3},{"codigo":"6","nombre":"SILVIA BOUTET","equipo":"JUAN","cuota":3,"vendido":0,"pct":0,"falta":3},{"codigo":"7","nombre":"ANGELA ECHEVERRIA","equipo":"JUAN","cuota":3,"vendido":0,"pct":0,"falta":3},{"codigo":"9","nombre":"PILAR FERNANDEZ","equipo":"JUAN","cuota":3,"vendido":0,"pct":0,"falta":3},{"codigo":"11","nombre":"LORENA ESCOBAR","equipo":"JUAN","cuota":3,"vendido":0,"pct":0,"falta":3},{"codigo":"12","nombre":"FIAMA JARA","equipo":"JUAN","cuota":3,"vendido":0,"pct":0,"falta":3},{"codigo":"34","nombre":"NARA GONZALEZ","equipo":"FLOR","cuota":3,"vendido":0,"pct":0,"falta":3},{"codigo":"35","nombre":"AGUSTINA COCA","equipo":"FLOR","cuota":3,"vendido":0,"pct":0,"falta":3},{"codigo":"37","nombre":"GIMENA ESCUDERO","equipo":"FLOR","cuota":3,"vendido":0,"pct":0,"falta":3},{"codigo":"38","nombre":"NAHUEL BAETA","equipo":"FLOR","cuota":3,"vendido":0,"pct":0,"falta":3},{"codigo":"44","nombre":"BELEN ROMERO","equipo":"FLOR","cuota":3,"vendido":0,"pct":0,"falta":3}]},{"codigo":"7091","descripcion":"GAONA TOSTADAS ARROZ S/SAL 12 X 150GR","origen":"General","fechaVencimiento":"2026-08-31","diasAlVencimiento":25,"cajasFechaCorta":null,"unidadesAVencer":6,"cuotaJUAN":0,"cuotaFLOR":0,"cuotaLUCIA":6,"cuotaTotal":6,"vendidoCodigo":6,"vendidoJUAN":0,"vendidoFLOR":0,"vendidoLUCIA":6,"porVendedor":[{"codigo":"27","nombre":"Kaf Maria Jose Minio","equipo":"LUCIA","cuota":1,"vendido":6,"pct":6,"falta":0},{"codigo":"24","nombre":"KAF DANIEL SANCHEZ","equipo":"LUCIA","cuota":1,"vendido":0,"pct":0,"falta":1},{"codigo":"25","nombre":"KAF ROMINA MERELLO","equipo":"LUCIA","cuota":1,"vendido":0,"pct":0,"falta":1},{"codigo":"26","nombre":"Kaf Gaby Peralta","equipo":"LUCIA","cuota":1,"vendido":0,"pct":0,"falta":1},{"codigo":"28","nombre":"VENDEDOR 28 KAF","equipo":"LUCIA","cuota":1,"vendido":0,"pct":0,"falta":1}]}]}</script>
+<script>
+(function () {
+  var DATA = JSON.parse(document.getElementById('frescura-data').textContent);
+  var EQUIPO_LABEL = { JUAN: 'Equipo JUAN', FLOR: 'Equipo FLOR', LUCIA: 'Equipo LUCÍA (KAF)' };
+  var filtro = null; // null = todos
+
+  function fmtInt(n) { return Math.round(n).toLocaleString('es-AR'); }
+  function pctTxt(p) { return p === null ? '—' : (p * 100).toLocaleString('es-AR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + '%'; }
+  function pctClase(p) { if (p === null) return 'neutral'; if (p >= 1) return 'ok'; if (p >= 0.4) return 'warn'; return 'crit'; }
+  function urgenciaClase(d) { if (d <= 7) return 'crit'; if (d <= 14) return 'warn'; return 'ok'; }
+  function fechaLarga(iso) {
+    var p = iso.split('-'); var meses = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+    return p[2] + '/' + meses[Number(p[1]) - 1];
+  }
+  function barSm(p) {
+    var w = Math.min(100, (p || 0) * 100);
+    return '<div class="bar bar-sm"><div class="bar-fill ' + pctClase(p) + '" style="width:' + w + '%"></div></div>' +
+      '<span class="pct-txt ' + pctClase(p) + '">' + pctTxt(p) + '</span>';
+  }
+
+  function renderArt() {
+    var cuotaKey = filtro ? 'cuota' + filtro : 'cuotaTotal';
+    var vendidoKey = filtro ? 'vendido' + filtro : 'vendidoCodigo';
+    var rows = DATA.articulos.filter(function (a) { return !filtro || (a[cuotaKey] || 0) > 0; });
+    rows = rows.slice().sort(function (a, b) { return a.diasAlVencimiento - b.diasAlVencimiento; });
+    var tbody = document.getElementById('tbodyArt');
+    if (!rows.length) { tbody.innerHTML = '<tr><td colspan="9" class="empty">Sin artículos con cuota para este equipo.</td></tr>'; return; }
+    tbody.innerHTML = rows.map(function (a, i) {
+      var cuota = a[cuotaKey] || 0, vendido = a[vendidoKey] || 0;
+      var p = cuota > 0 ? vendido / cuota : null;
+      var mainRow = '<tr class="art-row" data-detail="' + i + '">' +
+        '<td class="chev">▸</td>' +
+        '<td class="mono">' + a.codigo + '</td>' +
+        '<td class="name">' + a.descripcion + '</td>' +
+        '<td><span class="chip chip-origen">' + a.origen + '</span></td>' +
+        '<td class="num-cell">' + fechaLarga(a.fechaVencimiento) + '</td>' +
+        '<td><span class="chip chip-' + urgenciaClase(a.diasAlVencimiento) + '">' + a.diasAlVencimiento + ' d</span></td>' +
+        '<td class="num-cell">' + fmtInt(cuota) + '</td>' +
+        '<td class="num-cell">' + fmtInt(vendido) + '</td>' +
+        '<td class="pct-cell">' + barSm(p) + '</td>' +
+        '</tr>';
+
+      var porVend = a.porVendedor.filter(function (v) { return !filtro || v.equipo === filtro; });
+      var detailBody = porVend.length
+        ? porVend.map(function (v) {
+            return '<tr>' +
+              '<td><span class="chip chip-' + v.equipo.toLowerCase() + '">' + v.equipo + '</span></td>' +
+              '<td class="name">' + v.nombre + '</td>' +
+              '<td class="num-cell">' + fmtInt(v.vendido) + '</td>' +
+              '<td class="num-cell">' + fmtInt(v.cuota) + '</td>' +
+              '<td class="pct-cell">' + barSm(v.pct) + '</td>' +
+              '</tr>';
+          }).join('')
+        : '<tr><td colspan="5" class="empty">Sin vendedoras con cuota asignada.</td></tr>';
+      var detailRow = '<tr class="art-detail" data-detail-row="' + i + '" hidden><td colspan="9">' +
+        '<div class="detail-wrap"><table class="mini-table"><thead><tr>' +
+        '<th>Equipo</th><th>Vendedor</th><th>Vendido</th><th>Objetivo</th><th>% cumplido</th>' +
+        '</tr></thead><tbody>' + detailBody + '</tbody></table></div>' +
+        '</td></tr>';
+      return mainRow + detailRow;
+    }).join('');
+  }
+
+  function renderHints() {
+    var etiqueta = filtro ? EQUIPO_LABEL[filtro] : 'todos los equipos';
+    document.getElementById('hintArt').textContent = 'mostrando ' + etiqueta + ' · ordenado por urgencia de vencimiento';
+    document.getElementById('btnClear').style.display = filtro ? '' : 'none';
+  }
+
+  function renderTeamCards() {
+    document.querySelectorAll('.team-card').forEach(function (card) {
+      var t = card.getAttribute('data-team');
+      var isSelected = filtro && t === filtro;
+      var isTotalSelected = !filtro && t === '';
+      card.classList.toggle('selected', !!(isSelected || isTotalSelected));
+      card.classList.toggle('dimmed', !!(filtro && t !== filtro && t !== ''));
+      card.setAttribute('aria-pressed', String(isSelected || isTotalSelected));
+    });
+  }
+
+  function setFiltro(t) {
+    filtro = t || null;
+    renderTeamCards(); renderHints(); renderArt();
+  }
+
+  document.querySelectorAll('.team-card').forEach(function (card) {
+    card.addEventListener('click', function () {
+      var t = card.getAttribute('data-team');
+      setFiltro(filtro === t ? null : (t || null));
+    });
+    card.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); card.click(); }
+    });
+  });
+  document.getElementById('btnClear').addEventListener('click', function () { setFiltro(null); });
+
+  document.getElementById('tbodyArt').addEventListener('click', function (e) {
+    var row = e.target.closest('.art-row');
+    if (!row) return;
+    var idx = row.getAttribute('data-detail');
+    var detail = document.querySelector('.art-detail[data-detail-row="' + idx + '"]');
+    if (!detail) return;
+    var opening = detail.hidden;
+    detail.hidden = !opening;
+    row.classList.toggle('open', opening);
+  });
+
+  setFiltro(null);
+})();
+</script>
+</body>
+</html>
