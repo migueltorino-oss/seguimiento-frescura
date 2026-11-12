@@ -49,7 +49,11 @@ th[data-k].orden::after { content: " ▾"; color: var(--accent); }
 th[data-k].orden.asc::after { content: " ▴"; }
 td { padding: 6px 4px; text-align: right; border-bottom: 1px solid var(--line); white-space: nowrap; }
 td:first-child { text-align: left; white-space: normal; min-width: 170px; }
-#vTodos th { padding-inline: 4px; }
+#vTodos th { padding-inline: 3px; }
+#vTodos td { padding: 6px 3px; }
+#vTodos td:first-child { min-width: 140px; }
+#vTodos tr.art td { font-size: 12px; }
+#vTodos tr.prov td:nth-child(12) { white-space: normal; min-width: 96px; }
 #vTodos .pill { min-width: 2.8em; padding: 1px 5px; }
 tr.prov { cursor: pointer; font-weight: 600; }
 tr.prov:hover td { background: var(--accent-soft); }
@@ -119,7 +123,7 @@ td.camino { color: var(--accent); font-weight: 600; }
           <th class="grupo sep" colspan="3">Hoy</th>
           <th class="grupo sep" colspan="5">Ciclo del mes</th>
           <th class="grupo sep" colspan="4">Pedido sugerido</th>
-          <th class="grupo sep sem" colspan="2" id="thSemGrupo">Pedido a la fecha</th>
+          <th class="grupo sep sem" colspan="3" id="thSemGrupo">Pedido a la fecha</th>
         </tr>
         <tr id="cab">
           <th data-k="nombre">Proveedor / artículo</th>
@@ -137,6 +141,7 @@ td.camino { color: var(--accent); font-weight: 600; }
           <th data-k="dcp">Días al cierre<br>con pedido</th>
           <th data-k="ds" class="sep" id="thDs">Días a la<br>fecha s/pedido</th>
           <th data-k="ps" id="thPs">Pedido a la<br>fecha (cajas / $)</th>
+          <th data-k="ph" id="thPh">Pedido hoy<br>(cajas / $)</th>
         </tr>
       </thead>
       <tbody id="cuerpo"></tbody>
@@ -398,7 +403,7 @@ if (typeof module !== 'undefined') module.exports = { buildXlsx };
     for (const p of lista) {
       const obj = ovr[p.cod] != null && ovr[p.cod] !== '' ? +ovr[p.cod] : diasObj;
       p.obj = obj;
-      const t = { prom: 0, sa: 0, si: 0, ci: 0, vc: 0, vr: 0, pc: 0, ped: 0, pedU: 0, n: 0, sinPrecio: 0, ps: 0, sf: 0, nS: 0 };
+      const t = { prom: 0, sa: 0, si: 0, ci: 0, vc: 0, vr: 0, pc: 0, ped: 0, pedU: 0, n: 0, sinPrecio: 0, ps: 0, sf: 0, nS: 0, ph: 0, nH: 0 };
       for (const a of p.arts) {
         a.vr = a.prom * DR;
         a.pc = base === 'ini' ? a.si + a.ci - a.vc - a.vr : a.sa - a.vr;
@@ -417,8 +422,14 @@ if (typeof module !== 'undefined') module.exports = { buildXlsx };
         a.cajS = a.prom > 0 && faltaS > 0 ? Math.ceil(faltaS / (a.upb || 1)) : 0;
         a.psU = a.cajS * (a.upb || 1);
         a.ps = a.psU * a.precio;
+        // pedido hoy: llevar el stock actual (sin proyectar) a los mismos días de stock
+        const faltaH = a.prom * semDias - a.sa;
+        a.cajH = a.prom > 0 && faltaH > 0 ? Math.ceil(faltaH / (a.upb || 1)) : 0;
+        a.phU = a.cajH * (a.upb || 1);
+        a.ph = a.phU * a.precio;
         const pr = a.precio;
         t.ps += a.ps; t.sf += a.sf * pr; if (a.cajS) t.nS++;
+        t.ph += a.ph; if (a.cajH) t.nH++;
         t.prom += a.prom * pr; t.sa += a.sa * pr; t.si += a.si * pr; t.ci += a.ci * pr; t.vc += a.vc * pr;
         t.vr += a.vr * pr; t.pc += a.pc * pr; t.ped += a.ped; t.pedU += a.pedU;
         if (a.cajas > 0) t.n++;
@@ -434,13 +445,13 @@ if (typeof module !== 'undefined') module.exports = { buildXlsx };
 
   function visibleArt(a, txt) {
     if ($('conStock').checked && !a.v && !a.sa && !a.si) return false;
-    if ($('soloPed').checked && !a.cajas && !a.cajS) return false;
+    if ($('soloPed').checked && !a.cajas && !a.cajS && !a.cajH) return false;
     if (txt && !(a.d + ' ' + a.c).toLowerCase().includes(txt)) return false;
     return true;
   }
 
   const valProv = (p, k) => k === 'nombre' ? p.nombre : k === 'obj' ? p.obj : k === 'ped' ? p.t.ped : (p.t[k] ?? -1e15);
-  const valArt = (a, k) => k === 'nombre' ? a.d : k === 'obj' ? a.obj : k === 'ped' ? a.ped || a.cajas : k === 'ps' ? a.ps || a.cajS : k === 'dias' || k === 'dc' || k === 'dcp' || k === 'ds' ? (a[k] ?? -1e15) : (k === 'prom' || k === 'sa' || k === 'si' || k === 'ci' || k === 'vc' || k === 'vr' || k === 'pc') ? a[k] / (a.upb || 1) : 0;
+  const valArt = (a, k) => k === 'nombre' ? a.d : k === 'obj' ? a.obj : k === 'ped' ? a.ped || a.cajas : k === 'ps' ? a.ps || a.cajS : k === 'ph' ? a.ph || a.cajH :k === 'dias' || k === 'dc' || k === 'dcp' || k === 'ds' ? (a[k] ?? -1e15) : (k === 'prom' || k === 'sa' || k === 'si' || k === 'ci' || k === 'vc' || k === 'vr' || k === 'pc') ? a[k] / (a.upb || 1) : 0;
   const cmp = (va, vb) => typeof va === 'string' ? va.localeCompare(vb, 'es') : va - vb;
 
   const cj = (u, a) => nf0.format(u / (a.upb || 1));
@@ -449,9 +460,9 @@ if (typeof module !== 'undefined') module.exports = { buildXlsx };
     calcular();
     const txt = $('buscar').value.trim().toLowerCase();
     const filas = [];
-    let tot = { ped: 0, n: 0, provs: 0, prom: 0, sa: 0, pc: 0, ps: 0, nS: 0, provsS: 0 };
+    let tot = { ped: 0, n: 0, provs: 0, prom: 0, sa: 0, pc: 0, ps: 0, nS: 0, provsS: 0, ph: 0, nH: 0, provsH: 0 };
     const fS = fdia(semFecha);
-    $('thSemGrupo').textContent = `Pedido al ${fS} · ${nf1.format(semDias)} días`;
+    $('thSemGrupo').textContent = `Pedido p/ ${nf1.format(semDias)} días · al ${fS} y hoy`;
     $('thDs').innerHTML = `Días al ${fS}<br>s/pedido`;
     $('thPs').innerHTML = `Pedido al ${fS}<br>(cajas / $)`;
     const s = orden.asc ? 1 : -1;
@@ -460,10 +471,11 @@ if (typeof module !== 'undefined') module.exports = { buildXlsx };
       const provMatch = txt && p.nombre.toLowerCase().includes(txt);
       const arts = p.arts.filter(a => visibleArt(a, provMatch ? '' : txt));
       if (!arts.length) continue;
-      if ($('soloPed').checked && !p.t.n && !p.t.nS) continue;
+      if ($('soloPed').checked && !p.t.n && !p.t.nS && !p.t.nH) continue;
       const t = p.t;
       tot.ped += t.ped; tot.n += t.n; tot.prom += t.prom; tot.sa += t.sa; tot.pc += t.pc; if (t.n) tot.provs++;
       tot.ps += t.ps; tot.nS += t.nS; if (t.nS) tot.provsS++;
+      tot.ph += t.ph; tot.nH += t.nH; if (t.nH) tot.provsH++;
       const abierto = abiertos.has(p.cod) || (!!txt && !provMatch) || $('soloPed').checked;
       const ovrVal = ovr[p.cod] ?? '';
       filas.push(`<tr class="prov${abierto ? ' abierto' : ''}" data-p="${p.cod}" tabindex="0">
@@ -475,7 +487,8 @@ if (typeof module !== 'undefined') module.exports = { buildXlsx };
         <td><span class="ped">${t.ped ? pesos(t.ped) : '—'}</span>${t.sinPrecio ? ` <span class="cod" title="artículos a pedir sin precio de venta para valorizar">+${t.sinPrecio} s/precio</span>` : ''} ${t.n ? `<button class="sec btnfila" data-xl="${p.cod}" title="Copiar el pedido de este proveedor">copiar</button>` : ''}</td>
         <td>${t.dcp == null ? '' : semaforo(t.dcp, 1)}</td>
         <td class="sep">${t.ds == null ? '<span class="nada">—</span>' : semaforo(t.ds, 1)}</td>
-        <td><span class="ped">${t.ps ? pesos(t.ps) : '—'}</span>${t.nS ? ` <span class="cod">${t.nS} art.</span>` : ''}</td></tr>`);
+        <td><span class="ped">${t.ps ? pesos(t.ps) : '—'}</span>${t.nS ? ` <span class="cod">${t.nS} art.</span>` : ''}</td>
+        <td><span class="ped">${t.ph ? pesos(t.ph) : '—'}</span>${t.nH ? ` <span class="cod">${t.nH} art.</span>` : ''}</td></tr>`);
       if (!abierto) continue;
       arts.sort((x, y) => s * cmp(valArt(x, orden.k), valArt(y, orden.k)));
       for (const a of arts) {
@@ -488,10 +501,11 @@ if (typeof module !== 'undefined') module.exports = { buildXlsx };
           <td>${a.cajas ? `<span class="ped">${nf0.format(a.cajas)} cj</span> <span class="cod">${a.ped ? pesos(a.ped) : 's/precio'}</span>` : '<span class="nada">—</span>'}</td>
           <td>${a.dcp == null ? '' : semaforo(a.dcp, a.prom)}</td>
           <td class="sep">${a.ds == null ? '<span class="nada">—</span>' : semaforo(a.ds, a.prom)}</td>
-          <td>${a.cajS ? `<span class="ped">${nf0.format(a.cajS)} cj</span> <span class="cod">${a.ps ? pesos(a.ps) : 's/precio'}</span>` : '<span class="nada">—</span>'}</td></tr>`);
+          <td>${a.cajS ? `<span class="ped">${nf0.format(a.cajS)} cj</span> <span class="cod">${a.ps ? pesos(a.ps) : 's/precio'}</span>` : '<span class="nada">—</span>'}</td>
+          <td>${a.cajH ? `<span class="ped">${nf0.format(a.cajH)} cj</span> <span class="cod">${a.ph ? pesos(a.ph) : 's/precio'}</span>` : '<span class="nada">—</span>'}</td></tr>`);
       }
     }
-    $('cuerpo').innerHTML = filas.join('') || '<tr><td colspan="15" class="nada" style="text-align:center;padding:20px">Nada coincide con el filtro.</td></tr>';
+    $('cuerpo').innerHTML = filas.join('') || '<tr><td colspan="16" class="nada" style="text-align:center;padding:20px">Nada coincide con el filtro.</td></tr>';
     const dHoyStock = tot.prom > 0 ? tot.sa / tot.prom : 0, dCierre = tot.prom > 0 ? tot.pc / tot.prom : 0;
     $('tarjetas').innerHTML = [
       ['Días de stock hoy', nf1.format(dHoyStock), 'stock valorizado ÷ venta diaria'],
@@ -499,6 +513,7 @@ if (typeof module !== 'undefined') module.exports = { buildXlsx };
       ['Pedido sugerido', pesos(tot.ped), `${tot.n} artículos · ${tot.provs} proveedores`, true],
       ['Días al cierre con pedido', nf1.format(tot.prom > 0 ? (tot.pc + tot.ped) / tot.prom : 0), 'si entra todo el pedido'],
       [`Pedido al ${fS}`, pesos(tot.ps), `${tot.nS} artículos · ${tot.provsS} prov. · ${nf1.format(semDias)} días desde esa fecha`, true],
+      [`Pedido hoy p/ ${nf1.format(semDias)} días`, pesos(tot.ph), `${tot.nH} artículos · ${tot.provsH} prov. · sobre el stock actual`, true],
       ['Faltan vender', DR + ' días', `de hoy al ${fdia(DATA.cierre)} (corridos)`],
     ].map(([l, v, n, d]) => `<div class="tarjeta${d ? ' dest' : ''}"><span class="lbl">${l}</span><span class="v">${v}</span><span class="n">${n}</span></div>`).join('');
     document.querySelectorAll('#cab th').forEach(th => { th.classList.toggle('orden', th.dataset.k === orden.k); th.classList.toggle('asc', th.dataset.k === orden.k && orden.asc); });
@@ -521,6 +536,7 @@ if (typeof module !== 'undefined') module.exports = { buildXlsx };
     `<b>Pedido sugerido</b> = venta diaria × días objetivo − stock proyectado al cierre, redondeado a cajas enteras hacia arriba (0 si alcanza). ` +
     `Los días objetivo se pueden cambiar por proveedor en su fila; vacío usa el general. ` +
     `<b>Pedido a la fecha</b> = venta diaria × días de stock a esa fecha − stock proyectado al empezar ese día (mismo punto de partida, menos la venta diaria × días corridos de hoy a la fecha), en cajas enteras hacia arriba. Es independiente del pedido al cierre: no sumar los dos. ` +
+    `<b>Pedido hoy</b> = venta diaria × los mismos días de stock − stock actual (lo que hay hoy en el depósito, sin proyectar), en cajas enteras hacia arriba: lo que hay que pedir hoy para quedar con esos días de stock. ` +
     `<b>Semáforo:</b> rojo menos de 10 días o más de 25, amarillo 10 a 13, verde 14 a 25. Artículos sin venta en el período no generan pedido ni se valorizan.`;
 
   // ----- eventos
@@ -557,15 +573,15 @@ if (typeof module !== 'undefined') module.exports = { buildXlsx };
 
   // ----- exportar
   const CAB = ['Proveedor', 'Código', 'Artículo', 'Unid/bulto', 'Venta diaria (cj)', 'Stock actual (cj)', 'Días de stock', `Stock ${fdia(DATA.d2)} (cj)`, 'Compras ingresadas (cj)', 'Vendido a la fecha (cj)', 'Venta proy. resto (cj)', 'Stock proy. cierre (cj)', 'Días al cierre s/pedido', 'Días objetivo', 'Pedido (cajas)', 'Pedido (unidades)', 'Pedido $ (venta neta)', 'Días al cierre c/pedido'];
-  const cabFull = () => [...CAB, `Días al ${fdia(semFecha)} s/pedido`, `Pedido al ${fdia(semFecha)} (cajas)`, `Pedido al ${fdia(semFecha)} $`];
+  const cabFull = () => [...CAB, `Días al ${fdia(semFecha)} s/pedido`, `Pedido al ${fdia(semFecha)} (cajas)`, `Pedido al ${fdia(semFecha)} $`, `Pedido hoy p/ ${semDias} días (cajas)`, `Pedido hoy p/ ${semDias} días $`];
   const r1 = (x) => x == null ? null : Math.round(x * 10) / 10;
   function filasPedido(ps) {
     calcular();
     const rows = [];
     for (const p of ps) for (const a of p.arts) {
-      if (!a.cajas && !a.cajS) continue;
+      if (!a.cajas && !a.cajS && !a.cajH) continue;
       const u = a.upb || 1;
-      rows.push([p.nombre, a.c, a.d, u, r1(a.prom / u), r1(a.sa / u), r1(a.dias), r1(a.si / u), r1(a.ci / u), r1(a.vc / u), r1(a.vr / u), r1(a.pc / u), r1(a.dc), a.obj, a.cajas, a.pedU, Math.round(a.ped), r1(a.dcp), r1(a.ds), a.cajS, Math.round(a.ps)]);
+      rows.push([p.nombre, a.c, a.d, u, r1(a.prom / u), r1(a.sa / u), r1(a.dias), r1(a.si / u), r1(a.ci / u), r1(a.vc / u), r1(a.vr / u), r1(a.pc / u), r1(a.dc), a.obj, a.cajas, a.pedU, Math.round(a.ped), r1(a.dcp), r1(a.ds), a.cajS, Math.round(a.ps), a.cajH, Math.round(a.ph)]);
     }
     return rows;
   }
@@ -582,7 +598,7 @@ if (typeof module !== 'undefined') module.exports = { buildXlsx };
   $('excel').addEventListener('click', () => {
     const ps = lista.filter(p => p.t.n || p.t.nS).sort((a, b) => b.t.ped - a.t.ped);
     const resumen = [['Proveedor', 'Artículos a pedir', 'Pedido $ (venta neta)', 'Días objetivo', `Artículos al ${fdia(semFecha)}`, `Pedido al ${fdia(semFecha)} $`], ...ps.map(p => [p.nombre, p.t.n, Math.round(p.t.ped), p.obj, p.t.nS, Math.round(p.t.ps)])];
-    const sheets = [{ name: 'Resumen', rows: resumen, widths: [40, 16, 20, 14, 16, 18] }, { name: 'Pedido por artículo', rows: [cabFull(), ...filasPedido(ps)], widths: [32, 10, 44, 9, 10, 10, 9, 10, 10, 10, 10, 10, 10, 9, 9, 10, 14, 10, 10, 10, 14] }];
+    const sheets = [{ name: 'Resumen', rows: resumen, widths: [40, 16, 20, 14, 16, 18] }, { name: 'Pedido por artículo', rows: [cabFull(), ...filasPedido(ps)], widths: [32, 10, 44, 9, 10, 10, 9, 10, 10, 10, 10, 10, 10, 9, 9, 10, 14, 10, 10, 10, 14, 12, 14] }];
     const bytes = buildXlsx(sheets);
     const blob = new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
     const url = URL.createObjectURL(blob), aEl = document.createElement('a');
