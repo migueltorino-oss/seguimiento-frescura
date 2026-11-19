@@ -51,9 +51,10 @@ td { padding: 6px 4px; text-align: right; border-bottom: 1px solid var(--line); 
 td:first-child { text-align: left; white-space: normal; min-width: 170px; }
 #vTodos th { padding-inline: 3px; }
 #vTodos td { padding: 6px 3px; }
-#vTodos td:first-child { min-width: 140px; }
+#vTodos td:first-child { min-width: 130px; width: 130px; overflow-wrap: anywhere; }
+#vTodos th[data-k="ci"] { font-size: .72rem; }
 #vTodos tr.art td { font-size: 12px; }
-#vTodos tr.prov td:nth-child(12) { white-space: normal; min-width: 96px; }
+#vTodos tr.prov td:nth-child(13) { white-space: normal; min-width: 74px; }
 #vTodos .pill { min-width: 2.8em; padding: 1px 5px; }
 tr.prov { cursor: pointer; font-weight: 600; }
 tr.prov:hover td { background: var(--accent-soft); }
@@ -62,7 +63,9 @@ tr.prov.abierto td:first-child::before { content: "▾"; }
 tr.art td { font-size: 12.5px; background: var(--rowalt); }
 tr.art td:first-child { padding-left: 26px; color: var(--fg); }
 .cod { color: var(--muted); font-size: .78em; margin-right: 4px; }
-.kg { display: block; color: var(--muted); font-size: .78em; font-weight: 600; white-space: nowrap; }
+td.kgc { color: var(--muted); font-weight: 600; }
+#vTodos td .ped + .cod { display: block; margin-right: 0; }
+th.kgh { color: var(--accent); }
 .sep { border-left: 1px solid var(--line); }
 .pill { display: inline-block; min-width: 3.2em; text-align: center; border-radius: 10px; padding: 1px 7px; font-weight: 600; }
 .ok { color: var(--ok); background: var(--ok-bg); } .warn { color: var(--warn); background: var(--warn-bg); } .bad { color: var(--bad); background: var(--bad-bg); }
@@ -121,15 +124,16 @@ td.camino { color: var(--accent); font-weight: 600; }
       <thead>
         <tr>
           <th class="grupo"></th>
-          <th class="grupo sep" colspan="3">Hoy</th>
+          <th class="grupo sep" colspan="4">Hoy</th>
           <th class="grupo sep" colspan="5">Ciclo del mes</th>
-          <th class="grupo sep" colspan="4">Pedido sugerido</th>
-          <th class="grupo sep sem" colspan="3" id="thSemGrupo">Pedido a la fecha</th>
+          <th class="grupo sep" colspan="5">Pedido sugerido</th>
+          <th class="grupo sep sem" colspan="5" id="thSemGrupo">Pedido a la fecha</th>
         </tr>
         <tr id="cab">
           <th data-k="nombre">Proveedor / artículo</th>
           <th data-k="prom" class="sep">Venta<br>diaria</th>
           <th data-k="sa">Stock<br>actual</th>
+          <th data-k="saK" class="kgh" title="Solo Pepsico">Stock<br>kg</th>
           <th data-k="dias">Días de<br>stock</th>
           <th data-k="si" class="sep" id="thSi">Stock<br>día 2</th>
           <th data-k="ci">Compras<br>ingresadas</th>
@@ -139,10 +143,13 @@ td.camino { color: var(--accent); font-weight: 600; }
           <th data-k="dc" class="sep">Días al<br>cierre s/pedido</th>
           <th data-k="obj">Días<br>objetivo</th>
           <th data-k="ped">Pedido<br>(cajas / $)</th>
+          <th data-k="pedK" class="kgh" title="Solo Pepsico">Pedido<br>kg</th>
           <th data-k="dcp">Días al cierre<br>con pedido</th>
           <th data-k="ds" class="sep" id="thDs">Días a la<br>fecha s/pedido</th>
           <th data-k="ps" id="thPs">Pedido a la<br>fecha (cajas / $)</th>
+          <th data-k="psK" class="kgh" title="Solo Pepsico">Pedido a la<br>fecha kg</th>
           <th data-k="ph" id="thPh">Pedido hoy<br>(cajas / $)</th>
+          <th data-k="phK" class="kgh" title="Solo Pepsico">Pedido<br>hoy kg</th>
         </tr>
       </thead>
       <tbody id="cuerpo"></tbody>
@@ -172,20 +179,22 @@ td.camino { color: var(--accent); font-weight: 600; }
       <thead>
         <tr>
           <th class="grupo"></th>
-          <th class="grupo sep" colspan="3">Hoy</th>
+          <th class="grupo sep" colspan="4">Hoy</th>
           <th class="grupo sep" colspan="4">Al cierre del mes</th>
-          <th class="grupo sep" colspan="2">Compra adicional</th>
+          <th class="grupo sep" colspan="3">Compra adicional</th>
         </tr>
         <tr id="pCab">
           <th data-k="nombre">Artículo</th>
           <th data-k="prom" class="sep">Venta<br>diaria</th>
           <th data-k="sa">Stock<br>actual</th>
+          <th data-k="saK" class="kgh">Stock<br>kg</th>
           <th data-k="dias">Días de<br>stock</th>
           <th data-k="pc" class="sep">Stock proy.<br>sin camiones</th>
           <th data-k="cam">En<br>camino</th>
           <th data-k="pcc">Stock proy.<br>con camiones</th>
           <th data-k="dcc">Días con<br>camiones</th>
           <th data-k="add" class="sep">Comprar<br>(cajas / $)</th>
+          <th data-k="addK" class="kgh">Comprar<br>kg</th>
           <th data-k="dct">Días con<br>todo</th>
         </tr>
       </thead>
@@ -429,7 +438,8 @@ if (typeof module !== 'undefined') module.exports = { buildXlsx };
         a.phU = a.cajH * (a.upb || 1);
         a.ph = a.phU * a.precio;
         const pr = a.precio;
-        if (a.fp) { t.saK += kgU(Math.max(0, a.sa), a); t.pedK += kgU(a.pedU, a); t.psK += kgU(a.psU, a); t.phK += kgU(a.phU, a); }
+        a.saK = kgU(Math.max(0, a.sa), a); a.pedK = kgU(a.pedU, a); a.psK = kgU(a.psU, a); a.phK = kgU(a.phU, a);
+        t.saK += a.saK; t.pedK += a.pedK; t.psK += a.psK; t.phK += a.phK;
         t.ps += a.ps; t.sf += a.sf * pr; if (a.cajS) t.nS++;
         t.ph += a.ph; if (a.cajH) t.nH++;
         t.prom += a.prom * pr; t.sa += a.sa * pr; t.si += a.si * pr; t.ci += a.ci * pr; t.vc += a.vc * pr;
@@ -453,13 +463,14 @@ if (typeof module !== 'undefined') module.exports = { buildXlsx };
   }
 
   const valProv = (p, k) => k === 'nombre' ? p.nombre : k === 'obj' ? p.obj : k === 'ped' ? p.t.ped : (p.t[k] ?? -1e15);
-  const valArt = (a, k) => k === 'nombre' ? a.d : k === 'obj' ? a.obj : k === 'ped' ? a.ped || a.cajas : k === 'ps' ? a.ps || a.cajS : k === 'ph' ? a.ph || a.cajH :k === 'dias' || k === 'dc' || k === 'dcp' || k === 'ds' ? (a[k] ?? -1e15) : (k === 'prom' || k === 'sa' || k === 'si' || k === 'ci' || k === 'vc' || k === 'vr' || k === 'pc') ? a[k] / (a.upb || 1) : 0;
+  const valArt = (a, k) => k === 'nombre' ? a.d : k.endsWith('K') ? a[k] || 0 : k === 'obj' ? a.obj : k === 'ped' ? a.ped || a.cajas : k === 'ps' ? a.ps || a.cajS : k === 'ph' ? a.ph || a.cajH :k === 'dias' || k === 'dc' || k === 'dcp' || k === 'ds' ? (a[k] ?? -1e15) : (k === 'prom' || k === 'sa' || k === 'si' || k === 'ci' || k === 'vc' || k === 'vr' || k === 'pc') ? a[k] / (a.upb || 1) : 0;
   const cmp = (va, vb) => typeof va === 'string' ? va.localeCompare(vb, 'es') : va - vb;
 
   const cj = (u, a) => nf0.format(u / (a.upb || 1));
   // kilos (solo Pepsico, 19/11/26): unidades base × factor de peso en gramos ÷ 1000
   const kgU = (u, a) => u * (a.fp || 0) / 1000;
-  const kgSpan = (x) => `<span class="kg">${nf0.format(x)} kg</span>`;
+  // celda de kilos: vacía fuera de Pepsico, "—" si da 0
+  const kgTd = (x, on, cls = '') => `<td class="kgc${cls}">${on ? (x >= 0.5 ? nf0.format(x) : '<span class="nada">—</span>') : ''}</td>`;
 
   function render() {
     calcular();
@@ -484,36 +495,34 @@ if (typeof module !== 'undefined') module.exports = { buildXlsx };
       const abierto = abiertos.has(p.cod) || (!!txt && !provMatch) || $('soloPed').checked;
       const ovrVal = ovr[p.cod] ?? '';
       const K = p.cod === '100';   // kilos solo para Pepsico
-      const kP = (x) => K && x ? kgSpan(x) : '';
       filas.push(`<tr class="prov${abierto ? ' abierto' : ''}" data-p="${p.cod}" tabindex="0">
         <td>${esc(p.nombre)} <span class="cod">${t.n ? t.n + ' art. a pedir' : ''}</span></td>
-        <td class="sep">${pesos(t.prom)}</td><td>${pesos(t.sa)}${kP(t.saK)}</td><td>${t.dias == null ? '<span class="nada">sin venta</span>' : semaforo(t.dias, 1)}</td>
+        <td class="sep">${pesos(t.prom)}</td><td>${pesos(t.sa)}</td>${kgTd(t.saK, K)}<td>${t.dias == null ? '<span class="nada">sin venta</span>' : semaforo(t.dias, 1)}</td>
         <td class="sep">${pesos(t.si)}</td><td>${pesos(t.ci)}</td><td>${pesos(t.vc)}</td><td>${pesos(t.vr)}</td><td class="${t.pc < 0 ? 'neg' : ''}">${pesos(t.pc)}</td>
         <td class="sep">${t.dc == null ? '<span class="nada">—</span>' : semaforo(t.dc, 1)}</td>
         <td><input class="ovr" type="number" step="0.5" min="0" id="ovr-${p.cod}" data-ovr="${p.cod}" value="${ovrVal}" placeholder="${nf1.format(diasObj)}" title="Días objetivo solo para este proveedor (vacío = el general)"></td>
-        <td><span class="ped">${t.ped ? pesos(t.ped) : '—'}</span>${t.sinPrecio ? ` <span class="cod" title="artículos a pedir sin precio de venta para valorizar">+${t.sinPrecio} s/precio</span>` : ''} ${t.n ? `<button class="sec btnfila" data-xl="${p.cod}" title="Copiar el pedido de este proveedor">copiar</button>` : ''}${kP(t.pedK)}</td>
+        <td><span class="ped">${t.ped ? pesos(t.ped) : '—'}</span>${t.sinPrecio ? ` <span class="cod" title="artículos a pedir sin precio de venta para valorizar">+${t.sinPrecio} s/precio</span>` : ''} ${t.n ? `<button class="sec btnfila" data-xl="${p.cod}" title="Copiar el pedido de este proveedor">copiar</button>` : ''}</td>${kgTd(t.pedK, K)}
         <td>${t.dcp == null ? '' : semaforo(t.dcp, 1)}</td>
         <td class="sep">${t.ds == null ? '<span class="nada">—</span>' : semaforo(t.ds, 1)}</td>
-        <td><span class="ped">${t.ps ? pesos(t.ps) : '—'}</span>${t.nS ? ` <span class="cod">${t.nS} art.</span>` : ''}${kP(t.psK)}</td>
-        <td><span class="ped">${t.ph ? pesos(t.ph) : '—'}</span>${t.nH ? ` <span class="cod">${t.nH} art.</span>` : ''}${kP(t.phK)}</td></tr>`);
+        <td><span class="ped">${t.ps ? pesos(t.ps) : '—'}</span>${t.nS ? ` <span class="cod">${t.nS} art.</span>` : ''}</td>${kgTd(t.psK, K)}
+        <td><span class="ped">${t.ph ? pesos(t.ph) : '—'}</span>${t.nH ? ` <span class="cod">${t.nH} art.</span>` : ''}</td>${kgTd(t.phK, K)}</tr>`);
       if (!abierto) continue;
       arts.sort((x, y) => s * cmp(valArt(x, orden.k), valArt(y, orden.k)));
-      const kA = (u, a) => K && a.fp && u > 0 ? kgSpan(kgU(u, a)) : '';
       for (const a of arts) {
         filas.push(`<tr class="art">
           <td><span class="cod">${esc(a.c)}</span>${esc(a.d)}${a.upb > 1 ? ` <span class="cod">×${a.upb}</span>` : ''}</td>
-          <td class="sep">${nf1.format(a.prom / (a.upb || 1))}</td><td>${cj(a.sa, a)}${kA(a.sa, a)}</td><td>${semaforo(a.dias, a.prom)}</td>
+          <td class="sep">${nf1.format(a.prom / (a.upb || 1))}</td><td>${cj(a.sa, a)}</td>${kgTd(a.saK, K)}<td>${semaforo(a.dias, a.prom)}</td>
           <td class="sep">${cj(a.si, a)}</td><td>${a.ci ? cj(a.ci, a) : '<span class="nada">—</span>'}</td><td>${cj(a.vc, a)}</td><td>${cj(a.vr, a)}</td><td class="${a.pc < 0 ? 'neg' : ''}">${cj(a.pc, a)}</td>
           <td class="sep">${a.dc == null ? '<span class="nada">—</span>' : semaforo(a.dc, a.prom)}</td>
           <td>${nf1.format(a.obj)}</td>
-          <td>${a.cajas ? `<span class="ped">${nf0.format(a.cajas)} cj</span> <span class="cod">${a.ped ? pesos(a.ped) : 's/precio'}</span>${kA(a.pedU, a)}` : '<span class="nada">—</span>'}</td>
+          <td>${a.cajas ? `<span class="ped">${nf0.format(a.cajas)} cj</span> <span class="cod">${a.ped ? pesos(a.ped) : 's/precio'}</span>` : '<span class="nada">—</span>'}</td>${kgTd(a.pedK, K)}
           <td>${a.dcp == null ? '' : semaforo(a.dcp, a.prom)}</td>
           <td class="sep">${a.ds == null ? '<span class="nada">—</span>' : semaforo(a.ds, a.prom)}</td>
-          <td>${a.cajS ? `<span class="ped">${nf0.format(a.cajS)} cj</span> <span class="cod">${a.ps ? pesos(a.ps) : 's/precio'}</span>${kA(a.psU, a)}` : '<span class="nada">—</span>'}</td>
-          <td>${a.cajH ? `<span class="ped">${nf0.format(a.cajH)} cj</span> <span class="cod">${a.ph ? pesos(a.ph) : 's/precio'}</span>${kA(a.phU, a)}` : '<span class="nada">—</span>'}</td></tr>`);
+          <td>${a.cajS ? `<span class="ped">${nf0.format(a.cajS)} cj</span> <span class="cod">${a.ps ? pesos(a.ps) : 's/precio'}</span>` : '<span class="nada">—</span>'}</td>${kgTd(a.psK, K)}
+          <td>${a.cajH ? `<span class="ped">${nf0.format(a.cajH)} cj</span> <span class="cod">${a.ph ? pesos(a.ph) : 's/precio'}</span>` : '<span class="nada">—</span>'}</td>${kgTd(a.phK, K)}</tr>`);
       }
     }
-    $('cuerpo').innerHTML = filas.join('') || '<tr><td colspan="16" class="nada" style="text-align:center;padding:20px">Nada coincide con el filtro.</td></tr>';
+    $('cuerpo').innerHTML = filas.join('') || '<tr><td colspan="20" class="nada" style="text-align:center;padding:20px">Nada coincide con el filtro.</td></tr>';
     const dHoyStock = tot.prom > 0 ? tot.sa / tot.prom : 0, dCierre = tot.prom > 0 ? tot.pc / tot.prom : 0;
     $('tarjetas').innerHTML = [
       ['Días de stock hoy', nf1.format(dHoyStock), 'stock valorizado ÷ venta diaria'],
@@ -638,7 +647,7 @@ if (typeof module !== 'undefined') module.exports = { buildXlsx };
       a.dct = a.prom > 0 ? (a.pcc + a.addU) / a.prom : null;
     }
   }
-  const valPep = (a, k) => k === 'nombre' ? a.d : k === 'add' ? a.addP || a.add : (k === 'dias' || k === 'dcc' || k === 'dct') ? (a[k] ?? -1e15) : a[k] / (a.upb || 1);
+  const valPep = (a, k) => k === 'nombre' ? a.d : k.endsWith('K') ? a[k] || 0 : k === 'add' ? a.addP || a.add : (k === 'dias' || k === 'dcc' || k === 'dct') ? (a[k] ?? -1e15) : a[k] / (a.upb || 1);
 
   function renderPep() {
     calcPep();
@@ -649,23 +658,23 @@ if (typeof module !== 'undefined') module.exports = { buildXlsx };
     const txt = $('pBuscar').value.trim().toLowerCase();
     const s = pOrden.asc ? 1 : -1;
     const t = { prom: 0, sa: 0, pc: 0, cam: 0, camCj: 0, add: 0, addP: 0, n: 0, sinPrecio: 0, saK: 0, addK: 0 };
-    const kA = (u, a) => a.fp && u > 0 ? kgSpan(kgU(u, a)) : '';
     const vis = pep.filter(a => (a.prom > 0 || a.cam || a.sa) && (!txt || (a.d + ' ' + a.c).toLowerCase().includes(txt)) && (!$('pSolo').checked || a.add));
     for (const a of pep) {
       const pr = a.precio;
       t.prom += a.prom * pr; t.sa += a.sa * pr; t.pc += a.pc * pr; t.cam += a.cam * pr; t.camCj += a.cam / (a.upb || 1);
       t.add += a.add; t.addP += a.addP; if (a.add) { t.n++; if (!pr) t.sinPrecio++; }
-      t.saK += kgU(Math.max(0, a.sa), a); t.addK += kgU(a.addU, a);
+      a.addK = kgU(a.addU, a);
+      t.saK += a.saK || 0; t.addK += a.addK;
     }
     vis.sort((x, y) => s * cmp(valPep(x, pOrden.k), valPep(y, pOrden.k)));
     $('pCuerpo').innerHTML = vis.map(a => `<tr class="art">
       <td><span class="cod">${esc(a.c)}</span>${esc(a.d)}${a.upb > 1 ? ` <span class="cod">×${a.upb}</span>` : ''}</td>
-      <td class="sep">${nf1.format(a.prom / (a.upb || 1))}</td><td>${cj(a.sa, a)}${kA(a.sa, a)}</td><td>${semaforo(a.dias, a.prom)}</td>
+      <td class="sep">${nf1.format(a.prom / (a.upb || 1))}</td><td>${cj(a.sa, a)}</td>${kgTd(a.saK, true)}<td>${semaforo(a.dias, a.prom)}</td>
       <td class="sep ${a.pc < 0 ? 'neg' : ''}">${cj(a.pc, a)}</td>
       <td class="camino"${a.camDet.length ? ` title="${esc(a.camDet.join(' · '))}"` : ''}>${a.cam ? cj(a.cam, a) : '<span class="nada">—</span>'}</td>
       <td class="${a.pcc < 0 ? 'neg' : ''}">${cj(a.pcc, a)}</td><td>${a.dcc == null ? '<span class="nada">sin venta</span>' : semaforo(a.dcc, a.prom)}</td>
-      <td class="sep">${a.add ? `<span class="ped">${nf0.format(a.add)} cj</span> <span class="cod">${a.addP ? pesos(a.addP) : 's/precio'}</span>${kA(a.addU, a)}` : '<span class="nada">—</span>'}</td>
-      <td>${a.dct == null ? '' : semaforo(a.dct, a.prom)}</td></tr>`).join('') || '<tr><td colspan="10" class="nada" style="text-align:center;padding:20px">Nada coincide con el filtro.</td></tr>';
+      <td class="sep">${a.add ? `<span class="ped">${nf0.format(a.add)} cj</span> <span class="cod">${a.addP ? pesos(a.addP) : 's/precio'}</span>` : '<span class="nada">—</span>'}</td>${kgTd(a.addK, true)}
+      <td>${a.dct == null ? '' : semaforo(a.dct, a.prom)}</td></tr>`).join('') || '<tr><td colspan="12" class="nada" style="text-align:center;padding:20px">Nada coincide con el filtro.</td></tr>';
     const d = (x) => nf1.format(t.prom > 0 ? x / t.prom : 0);
     const nAct = CAMS.filter(camActivo).length;
     $('pTarjetas').innerHTML = [
