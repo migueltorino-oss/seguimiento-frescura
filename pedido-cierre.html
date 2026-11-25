@@ -220,8 +220,8 @@ td.camino { color: var(--accent); font-weight: 600; }
   <section class="vista" id="vVen" hidden>
   <div class="controles">
     <div class="ctl"><label for="vBuscar">Buscar proveedor o artículo</label><input type="search" id="vBuscar" placeholder="Pepsico, Cubanitos, 2791…"></div>
-    <div class="ctl"><label for="vColor">Mostrar artículos</label>
-      <select id="vColor"><option value="todos">Todos</option><option value="rojo">Con algo en rojo (≤ 15 días)</option><option value="amar">Con algo en rojo o amarillo (≤ 30 días)</option><option value="riesgo">Que no llegan a venderse</option></select></div>
+    <div class="ctl"><label for="vColor">Productos</label>
+      <select id="vColor"><option value="todos">Todos</option><option value="bad">🔴 En rojo (≤ 15 días)</option><option value="warn">🟡 En amarillo (16 a 30 días)</option><option value="ok">🟢 En verde (más de 30 días)</option></select></div>
     <label class="chk" for="vSinVenta"><input type="checkbox" id="vSinVenta"> Incluir artículos sin venta</label>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-left:auto">
       <button class="sec" id="vAbrir">Abrir todos</button>
@@ -861,10 +861,8 @@ if (typeof module !== 'undefined') module.exports = { buildXlsx };
   function vFiltro(x) {
     const c = $('vColor').value;
     if (!$('vSinVenta').checked && !(x.a.prom > 0)) return false;
-    if (c === 'rojo') return x.r > 0;
-    if (c === 'amar') return x.r > 0 || x.y > 0;
-    if (c === 'riesgo') return x.rk > 0;
-    return true;
+    // el color del producto es el de su vencimiento más próximo
+    return c === 'todos' || clsVenc(x.d) === c;
   }
   const celdaSem = (q, $p, u, cls) => q > 0 ? `<span class="pill ${cls}">${nf0.format(Math.ceil(q / u))} cj</span>${$p ? ` <span class="cod">${pesos($p)}</span>` : ''}` : '<span class="nada">—</span>';
   const celdaSemP = ($p, n, cls) => $p > 0 ? `<span class="pill ${cls}">${pesos($p)}</span> <span class="cod">${n} art.</span>` : '<span class="nada">—</span>';
@@ -936,7 +934,7 @@ if (typeof module !== 'undefined') module.exports = { buildXlsx };
   $('vBuscar').addEventListener('input', renderVen);
   $('vColor').addEventListener('change', () => { store.set('vColor', $('vColor').value); renderVen(); });
   $('vSinVenta').addEventListener('change', () => { store.set('vSinVenta', $('vSinVenta').checked); renderVen(); });
-  $('vColor').value = store.get('vColor', 'todos'); $('vSinVenta').checked = store.get('vSinVenta', false);
+  { const c0 = store.get('vColor', 'todos'); $('vColor').value = ['todos', 'bad', 'warn', 'ok'].includes(c0) ? c0 : 'todos'; } $('vSinVenta').checked = store.get('vSinVenta', false);
   $('vCab').addEventListener('click', (e) => {
     const th = e.target.closest('th[data-k]'); if (!th) return;
     const k = th.dataset.k;
@@ -961,8 +959,7 @@ if (typeof module !== 'undefined') module.exports = { buildXlsx };
     for (const pv of vFiltrados()) for (const x of pv.arts) for (const [fe, q] of VENC[x.a.c]) {
       if (!fe) continue;
       const d = diasA(fe);
-      if ($('vColor').value === 'rojo' && d > 15) continue;
-      if ($('vColor').value === 'amar' && d > 30) continue;
+      if ($('vColor').value !== 'todos' && clsVenc(d) !== $('vColor').value) continue;
       rows.push([pv.p.nombre, x.a.c, x.a.d, x.u, fVenc(fe), d, d <= 15 ? 'ROJO' : d <= 30 ? 'AMARILLO' : 'VERDE', Math.round(q / x.u * 10) / 10, q, Math.round(q * (x.a.precio || 0)), Math.round(x.a.prom / x.u * 10) / 10]);
     }
     if (!rows.length) { toast('No hay vencimientos para copiar.'); return; }
